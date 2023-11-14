@@ -7,4 +7,5 @@ version = "0.1.0"
 Tenet = "85d41934-b9cd-44e1-8730-56d86f15f3ec"
 
 [compat]
+Tenet = "0.4"
 julia = "1.9"

@@ -1,4 +1,5 @@
 using Tenet
+using LinearAlgebra
 
 struct Product{S<:Socket} <: Ansatz
     wrap::TensorNetwork
@@ -39,4 +40,10 @@ socket(::Type{<:Product{S}}) where {S} = S()
 # AbstractTensorNetwork interface
 for f in [:(Tenet.inds), :(Tenet.tensors), :(Base.size)]
     @eval $f(ψ::Product; kwargs...) = $f(ψ.wrap; kwargs...)
+end
+
+function LinearAlgebra.norm(ψ::Product{State}, p::Real = 2)
+    mapreduce(*, tensors(ψ)) do tensor
+        mapreduce(Base.Fix2(^, p), +, parent(tensor))
+    end^(1 // p)
 end

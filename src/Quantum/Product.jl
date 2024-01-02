@@ -47,3 +47,15 @@ function LinearAlgebra.norm(ψ::Product{State}, p::Real = 2)
         mapreduce(Base.Fix2(^, p), +, parent(tensor))
     end^(1 // p)
 end
+
+function LinearAlgebra.normalize!(ψ::Product{State}, p::Real = 2; insert::Union{Nothing,Int} = nothing)
+    norm = LinearAlgebra.norm(ψ, p)
+
+    n = length(tensors(ψ))
+    norm ^= 1 / n
+    for tensor in tensors(ψ)
+        tensor ./= norm
+    end
+
+    ψ
+end

@@ -1,6 +1,5 @@
 using Test
 using Qrochet
-using OMEinsum
 
 @testset "Unit tests" verbose = true begin end
 

@@ -11,7 +11,7 @@ export boundary, Open, Periodic
 export Product
 export MatrixProduct
 
-include("Quantum/Product.jl")
+include("Ansatz/Product.jl")
 export Product
 
 end

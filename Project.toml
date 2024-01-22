@@ -6,7 +6,9 @@ version = "0.1.0"
 [deps]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 Tenet = "85d41934-b9cd-44e1-8730-56d86f15f3ec"
+ValSplit = "0625e100-946b-11ec-09cd-6328dd093154"
 
 [compat]
 Tenet = "0.5"
+ValSplit = "0.1"
 julia = "1.9"

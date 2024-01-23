@@ -14,7 +14,7 @@ struct Site
     id::Int
     dual::Bool
 
-    Site(id, dual = false) = new(id, dual)
+    Site(id; dual = false) = new(id, dual)
 end
 
 isdual(site::Site) = site.dual

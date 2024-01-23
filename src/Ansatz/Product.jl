@@ -21,6 +21,17 @@ function Product(arrays::Vector{<:Vector})
     Product(TensorNetwork(_tensors), sitemap)
 end
 
+function Product(arrays::Vector{<:Matrix})
+    n = length(arrays)
+    _tensors = map(enumerate(arrays)) do (i, array)
+        Tensor(array, [letter(i + n), letter(i)])
+    end
+
+    sitemap = merge!(Dict(Site(i, dual = true) => letter(i) for i in 1:n), Dict(Site(i) => letter(i + n) for i in 1:n))
+
+    Product(TensorNetwork(_tensors), sitemap)
+end
+
 LinearAlgebra.norm(tn::Product; kwargs...) = LinearAlgebra.norm(socket(tn), tn; kwargs...)
 function LinearAlgebra.norm(::State, tn::Product, p::Real = 2)
     mapreduce(*, tensors(tn)) do tensor

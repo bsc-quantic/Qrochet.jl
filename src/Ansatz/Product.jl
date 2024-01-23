@@ -1,61 +1,42 @@
 using Tenet
+using Tenet: letter
 using LinearAlgebra
 
-struct Product{S<:Socket} <: Ansatz
-    wrap::TensorNetwork
+struct Product <: Ansatz
+    super::Quantum
 
-    function Product{S}(arrays; order = defaultorder(Product{S})) where {S}
-        if S <: State
-            all(==(1) ∘ ndims, arrays) || throw(DimensionMismatch("Product{State} is constructed with vectors"))
-        elseif S <: Operator
-            all(==(2) ∘ ndims, arrays) || throw(DimensionMismatch("Product{Operator} is constructed with matrices"))
-        end
-
-        n = length(arrays)
-
-        oinds = map(genoutsym, 1:n)
-        iinds = map(geninsym, 1:n)
-
-        tensors::Vector{Tensor} = map(enumerate(arrays)) do (i, array)
-            inds = map(order) do dir
-                if dir === :o
-                    oinds[i]
-                elseif dir === :i
-                    iinds[i]
-                end
-            end
-            Tensor(array, inds)
-        end
-
-        return new{S}(TensorNetwork(tensors))
+    function Product(tn::TensorNetwork, sites)
+        @assert isempty(inds(tn, set = :inner)) "Product ansatz must not have inner indices"
+        new(Quantum(tn, sites))
     end
 end
 
-defaultorder(::Type{Product{Scalar}}) = ()
-defaultorder(::Type{Product{State}}) = (:o,)
-defaultorder(::Type{Product{Operator}}) = (:i, :o)
+function Product(arrays::Vector{<:Vector})
+    _tensors = map(enumerate(arrays)) do (i, array)
+        Tensor(array, [letter(i)])
+    end
 
-socket(::Type{<:Product{S}}) where {S} = S()
+    sitemap = Dict(Site(i) => letter(i) for i in 1:length(arrays))
 
-# AbstractTensorNetwork interface
-for f in [:(Tenet.inds), :(Tenet.tensors), :(Base.size)]
-    @eval $f(ψ::Product; kwargs...) = $f(ψ.wrap; kwargs...)
+    Product(TensorNetwork(_tensors), sitemap)
 end
 
-function LinearAlgebra.norm(ψ::Product{State}, p::Real = 2)
-    mapreduce(*, tensors(ψ)) do tensor
+LinearAlgebra.norm(tn::Product; kwargs...) = LinearAlgebra.norm(socket(tn), tn; kwargs...)
+function LinearAlgebra.norm(::State, tn::Product, p::Real = 2)
+    mapreduce(*, tensors(tn)) do tensor
         mapreduce(Base.Fix2(^, p), +, parent(tensor))
     end^(1 // p)
 end
 
-function LinearAlgebra.normalize!(ψ::Product{State}, p::Real = 2; insert::Union{Nothing,Int} = nothing)
-    norm = LinearAlgebra.norm(ψ, p)
+LinearAlgebra.normalize!(tn::Product; kwargs...) = LinearAlgebra.normalize!(socket(tn), tn; kwargs...)
+function LinearAlgebra.normalize!(::State, tn::Product, p::Real = 2; insert::Union{Nothing,Int} = nothing)
+    norm = LinearAlgebra.norm(tn, p)
 
-    n = length(tensors(ψ))
+    n = length(tensors(tn))
     norm ^= 1 / n
-    for tensor in tensors(ψ)
+    for tensor in tensors(tn)
         tensor ./= norm
     end
 
-    ψ
+    tn
 end

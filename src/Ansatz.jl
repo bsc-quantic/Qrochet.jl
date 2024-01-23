@@ -27,7 +27,3 @@ boundary(::A) where {A<:Ansatz} = boundary(A)
 
 Base.summary(io::IO, tn::A) where {A<:Ansatz} = print(io, "$A (inputs=$(ninputs(tn)), outputs=$(noutputs(tn)))")
 Base.show(io::IO, tn::A) where {A<:Ansatz} = Base.summary(io, tn)
-
-# helpers
-genoutsym(i) = Symbol(:p, i, :o)
-geninsym(i) = Symbol(:p, i, :i)

@@ -1,5 +1,14 @@
 using Tenet
 
+"""
+    Ansatz
+
+[`Quantum`](@ref) Tensor Network with a predefined structure.
+
+# Notes
+
+  - Any subtype must define `super::Quantum` field or specialize the `Quantum` method.
+"""
 abstract type Ansatz end
 
 abstract type Boundary end

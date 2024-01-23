@@ -48,8 +48,8 @@ struct Quantum
     tn::TensorNetwork
 
     # WARN keep them synchronized
-    siteinds::Dict{Site,Symbol}
-    sitetensors::Dict{Site,Tensor}
+    sites::Dict{Site,Symbol}
+    # sitetensors::Dict{Site,Tensor}
 
     function Quantum(tn::TensorNetwork, sites::Dict{Site,Symbol})
         for (site, index) in sites
@@ -60,11 +60,11 @@ struct Quantum
             end
         end
 
-        sitetensors = map(sites) do (site, index)
-            site => tn[index]
-        end |> Dict{Site,Tensor}
+        # sitetensors = map(sites) do (site, index)
+        #     site => tn[index]
+        # end |> Dict{Site,Tensor}
 
-        new(tn, sites, sitetensors)
+        new(tn, sites)
     end
 end
 
@@ -77,6 +77,6 @@ noutputs(q::Quantum) = count(!isdual, keys(q.sites))
 Base.summary(io::IO, q::Quantum) = print(io, "$(length(q.tn.tensormap))-tensors Quantum")
 Base.show(io::IO, q::Quantum) = print(io, "Quantum (inputs=$(ninputs(q)), outputs=$(noutputs(q)))")
 
-sites(tn::Quantum) = collect(keys(tn.siteinds))
+sites(tn::Quantum) = collect(keys(tn.sites))
 
-Base.getindex(q::Quantum, site::Site) = q.siteinds[site]
+Base.getindex(q::Quantum, site::Site) = q.sites[site]

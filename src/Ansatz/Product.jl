@@ -32,22 +32,24 @@ function Product(arrays::Vector{<:Matrix})
     Product(TensorNetwork(_tensors), sitemap)
 end
 
-LinearAlgebra.norm(tn::Product; kwargs...) = LinearAlgebra.norm(socket(tn), tn; kwargs...)
-function LinearAlgebra.norm(::State, tn::Product, p::Real = 2)
+LinearAlgebra.norm(tn::Product, p::Real = 2) = LinearAlgebra.norm(socket(tn), tn, p)
+function LinearAlgebra.norm(::Union{State,Operator}, tn::Product, p::Real)
     mapreduce(*, tensors(tn)) do tensor
-        mapreduce(Base.Fix2(^, p), +, parent(tensor))
+        norm(tensor, p)
     end^(1 // p)
 end
 
-LinearAlgebra.normalize!(tn::Product; kwargs...) = LinearAlgebra.normalize!(socket(tn), tn; kwargs...)
-function LinearAlgebra.normalize!(::State, tn::Product, p::Real = 2; insert::Union{Nothing,Int} = nothing)
-    norm = LinearAlgebra.norm(tn, p)
+LinearAlgebra.opnorm(tn::Product, p::Real = 2) = LinearAlgebra.opnorm(socket(tn), tn, p)
+function LinearAlgebra.opnorm(::Operator, tn::Product, p::Real)
+    mapreduce(*, tensors(tn)) do tensor
+        opnorm(tensor, p)
+    end^(1 // p)
+end
 
-    n = length(tensors(tn))
-    norm ^= 1 / n
+LinearAlgebra.normalize!(tn::Product, p::Real = 2) = LinearAlgebra.normalize!(socket(tn), tn, p)
+function LinearAlgebra.normalize!(::Union{State,Operator}, tn::Product, p::Real)
     for tensor in tensors(tn)
-        tensor ./= norm
+        normalize!(tensor, p)
     end
-
     tn
 end

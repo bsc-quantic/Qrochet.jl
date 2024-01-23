@@ -18,7 +18,7 @@ struct Site
 end
 
 isdual(site::Site) = site.dual
-Base.show(io::IO, site::Site) = print(io, "$(site.id)$(site.dual ? "†" : "")")
+Base.show(io::IO, site::Site) = print(io, "$(site.id)$(site.dual ? "'" : "")")
 Base.adjoint(site::Site) = Site(site.id; dual = !site.dual)
 
 macro site_str(str)

@@ -22,7 +22,7 @@ Base.show(io::IO, site::Site) = print(io, "$(site.id)$(site.dual ? "'" : "")")
 Base.adjoint(site::Site) = Site(site.id; dual = !site.dual)
 
 macro site_str(str)
-    m = match(r"^(\d+)(')$", str)
+    m = match(r"^(\d+)('?)$", str)
     if isnothing(m)
         error("Invalid site string: $str")
     end

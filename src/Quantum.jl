@@ -52,7 +52,7 @@ struct Quantum
     # sitetensors::Dict{Site,Tensor}
 
     function Quantum(tn::TensorNetwork, sites::Dict{Site,Symbol})
-        for (site, index) in sites
+        for (_, index) in sites
             if !haskey(tn.indexmap, index)
                 error("Index $index not found in TensorNetwork")
             elseif index ∉ inds(tn, set = :open)

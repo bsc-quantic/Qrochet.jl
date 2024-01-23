@@ -31,7 +31,7 @@ macro site_str(str)
     dual = m.captures[2] == "'"
 
     quote
-        Site($id, $dual)
+        Site($id; dual = $dual)
     end
 end
 

@@ -71,6 +71,13 @@ end
 # TODO (@mofeing) Return `copy`?
 Tenet.TensorNetwork(q::Quantum) = q.tn
 
+function Base.adjoint(q::Quantum)
+    sites = Iterators.map(q.sites) do (site, index)
+        site' => index
+    end |> Dict{Site,Symbol}
+    Quantum(conj(q.tn), sites)
+end
+
 ninputs(q::Quantum) = count(isdual, keys(q.sites))
 noutputs(q::Quantum) = count(!isdual, keys(q.sites))
 

@@ -80,3 +80,23 @@ Base.show(io::IO, q::Quantum) = print(io, "Quantum (inputs=$(ninputs(q)), output
 sites(tn::Quantum) = collect(keys(tn.sites))
 
 Base.getindex(q::Quantum, site::Site) = q.sites[site]
+
+abstract type Socket end
+struct Scalar <: Socket end
+Base.@kwdef struct State <: Socket
+    dual::Bool = false
+end
+struct Operator <: Socket end
+
+function socket(q::Quantum)
+    _sites = sites(q)
+    if isempty(_sites)
+        Scalar()
+    elseif all(!isdual, _sites)
+        State()
+    elseif all(isdual, _sites)
+        State(dual = true)
+    else
+        Operator()
+    end
+end

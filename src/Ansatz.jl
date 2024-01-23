@@ -2,25 +2,6 @@ using Tenet
 
 abstract type Ansatz end
 
-abstract type Socket end
-struct Scalar <: Socket end
-struct State <: Socket end
-struct Operator <: Socket end
-
-function socket end
-socket(::A) where {A<:Ansatz} = socket(A)
-
-function socket(q::Quantum)
-    _sites = sites(q)
-    if isempty(_sites)
-        Scalar()
-    elseif all(!isdual, _sites)
-        State()
-    else
-        Operator()
-    end
-end
-
 abstract type Boundary end
 struct Open <: Boundary end
 struct Periodic <: Boundary end

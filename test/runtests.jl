@@ -4,6 +4,7 @@ using Qrochet
 @testset "Unit tests" verbose = true begin
     include("Site_test.jl")
     include("Quantum_test.jl")
+    include("Ansatz/Product_test.jl")
 end
 
 @testset "Integration tests" verbose = true begin end

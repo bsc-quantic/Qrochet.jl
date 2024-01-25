@@ -14,4 +14,7 @@ export MatrixProduct
 include("Ansatz/Product.jl")
 export Product
 
+include("Ansatz/Chain.jl")
+export Chain
+
 end

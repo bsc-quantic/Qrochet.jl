@@ -51,7 +51,7 @@ struct Quantum
     sites::Dict{Site,Symbol}
     # sitetensors::Dict{Site,Tensor}
 
-    function Quantum(tn::TensorNetwork, sites::Dict{Site,Symbol})
+    function Quantum(tn::TensorNetwork, sites)
         for (_, index) in sites
             if !haskey(tn.indexmap, index)
                 error("Index $index not found in TensorNetwork")

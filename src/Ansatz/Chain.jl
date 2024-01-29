@@ -6,6 +6,13 @@ struct Chain <: Ansatz
     boundary::Boundary
 end
 
+boundary(tn::Chain) = tn.boundary
+
+MPS(arrays) = Chain(State(), Open(), arrays)
+pMPS(arrays) = Chain(State(), Periodic(), arrays)
+MPO(arrays) = Chain(Operator(), Open(), arrays)
+pMPO(arrays) = Chain(Operator(), Periodic(), arrays)
+
 alias(tn::Chain) = alias(socket(tn), boundary(tn), tn)
 alias(::State, ::Open, ::Chain) = "MPS"
 alias(::State, ::Periodic, ::Chain) = "pMPS"
@@ -103,10 +110,3 @@ function Chain(::Operator, boundary::Open, arrays::Vector{<:AbstractArray})
 
     Chain(Quantum(TensorNetwork(_tensors), sitemap), boundary)
 end
-
-boundary(tn::Chain) = tn.boundary
-
-MPS(arrays) = Chain(State(), Open(), arrays)
-pMPS(arrays) = Chain(State(), Periodic(), arrays)
-MPO(arrays) = Chain(Operator(), Open(), arrays)
-pMPO(arrays) = Chain(Operator(), Periodic(), arrays)

@@ -6,6 +6,12 @@ struct Chain <: Ansatz
     boundary::Boundary
 end
 
+alias(tn::Chain) = alias(socket(tn), boundary(tn), tn)
+alias(::State, ::Open, ::Chain) = "MPS"
+alias(::State, ::Periodic, ::Chain) = "pMPS"
+alias(::Operator, ::Open, ::Chain) = "MPO"
+alias(::Operator, ::Periodic, ::Chain) = "pMPO"
+
 function Chain(tn::TensorNetwork, sites, args...; kwargs...)
     Chain(Quantum(tn, sites), args...; kwargs...)
 end
@@ -100,7 +106,7 @@ end
 
 boundary(tn::Chain) = tn.boundary
 
-# const MPS = ...
-# const pMPS = ...
-# const MPO = ...
-# const pMPO = ...
+MPS(arrays) = Chain(State(), Open(), arrays)
+pMPS(arrays) = Chain(State(), Periodic(), arrays)
+MPO(arrays) = Chain(Operator(), Open(), arrays)
+pMPO(arrays) = Chain(Operator(), Periodic(), arrays)

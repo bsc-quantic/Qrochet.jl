@@ -24,5 +24,8 @@ struct Periodic <: Boundary end
 
 function boundary end
 
-Base.summary(io::IO, tn::A) where {A<:Ansatz} = print(io, "$A (inputs=$(ninputs(tn)), outputs=$(noutputs(tn)))")
+alias(::A) where {A} = string(A)
+function Base.summary(io::IO, tn::A) where {A<:Ansatz}
+    print(io, "$(alias(tn)) (inputs=$(ninputs(tn)), outputs=$(noutputs(tn)))")
+end
 Base.show(io::IO, tn::A) where {A<:Ansatz} = Base.summary(io, tn)

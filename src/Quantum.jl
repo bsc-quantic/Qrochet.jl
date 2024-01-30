@@ -90,6 +90,7 @@ for f in [:(Tenet.tensors)]
 end
 
 sites(tn::Quantum) = collect(keys(tn.sites))
+nsites(tn::Quantum) = length(tn.sites)
 
 Base.getindex(q::Quantum, site::Site) = q.sites[site]
 

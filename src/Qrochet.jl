@@ -17,4 +17,8 @@ export Product
 include("Ansatz/Chain.jl")
 export Chain
 
+# reexports from Tenet
+using Tenet
+export select
+
 end

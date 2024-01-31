@@ -1,4 +1,5 @@
 using Tenet
+using ValSplit
 
 """
     Ansatz
@@ -29,3 +30,20 @@ function Base.summary(io::IO, tn::A) where {A<:Ansatz}
     print(io, "$(alias(tn)) (inputs=$(ninputs(tn)), outputs=$(noutputs(tn)))")
 end
 Base.show(io::IO, tn::A) where {A<:Ansatz} = Base.summary(io, tn)
+
+@valsplit 2 Tenet.select(tn::Ansatz, query::Symbol, args...) = select(Quantum(tn), query, args...)
+
+function Tenet.select(tn::Ansatz, ::Val{:between}, site1::Site, site2::Site)
+    @assert site1 ∈ sites(tn) "Site $site1 not found"
+    @assert site2 ∈ sites(tn) "Site $site2 not found"
+    @assert site1 != site2 "Sites must be different"
+
+    tensor1 = select(Quantum(tn), :tensor, site1)
+    tensor2 = select(Quantum(tn), :tensor, site2)
+
+    !isdisjoint(inds(tensor1), inds(tensor2)) && return nothing
+
+    Iterators.filter(Iterators.filter(==(2) ∘ ndims, neighbors(TensorNetwork(tn), tensor1))) do tensor
+        tensor === tensor2
+    end |> only
+end

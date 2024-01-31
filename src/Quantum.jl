@@ -1,4 +1,5 @@
 using Tenet
+using ValSplit
 
 """
     Site(id[, dual = false])
@@ -84,11 +85,6 @@ noutputs(q::Quantum) = count(!isdual, keys(q.sites))
 Base.summary(io::IO, q::Quantum) = print(io, "$(length(q.tn.tensormap))-tensors Quantum")
 Base.show(io::IO, q::Quantum) = print(io, "Quantum (inputs=$(ninputs(q)), outputs=$(noutputs(q)))")
 
-# forward `TensorNetwork` methods
-for f in [:(Tenet.tensors)]
-    @eval $f(@nospecialize tn::Quantum) = $f(TensorNetwork(tn))
-end
-
 sites(tn::Quantum) = collect(keys(tn.sites))
 nsites(tn::Quantum) = length(tn.sites)
 
@@ -113,3 +109,12 @@ function socket(q::Quantum)
         Operator()
     end
 end
+
+# forward `TensorNetwork` methods
+for f in [:(Tenet.tensors)]
+    @eval $f(@nospecialize tn::Quantum) = $f(TensorNetwork(tn))
+end
+
+@valsplit 2 Tenet.select(tn::Quantum, query::Symbol, args...) = error("Query ':$query' not defined")
+Tenet.select(tn::Quantum, ::Val{:index}, site::Site) = tn[site]
+Tenet.select(tn::Quantum, ::Val{:tensor}, site::Site) = select(TensorNetwork(tn), :any, tn[site]) |> only

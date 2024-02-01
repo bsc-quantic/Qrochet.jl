@@ -110,3 +110,25 @@ function Chain(::Operator, boundary::Open, arrays::Vector{<:AbstractArray})
 
     Chain(Quantum(TensorNetwork(_tensors), sitemap), boundary)
 end
+
+leftindex(tn::Chain, site::Site) = leftindex(boundary(tn), tn, site)
+leftindex(::Periodic, tn::Chain, site::Site) = (select(tn, :tensor, site)|>inds)[end-1]
+function leftindex(::Open, tn::Chain, site::Site)
+    if site == site"1"
+        nothing
+    elseif site == Site(nsites(tn)) # TODO review
+        (select(tn, :tensor, site)|>inds)[end]
+    else
+        (select(tn, :tensor, site)|>inds)[end-1]
+    end
+end
+
+rightindex(tn::Chain, site::Site) = rightindex(boundary(tn), tn, site)
+rightindex(::Periodic, tn::Chain, site::Site) = (select(tn, :tensor, site)|>inds)[end]
+function rightindex(::Open, tn::Chain, site::Site)
+    if site == Site(nsites(tn)) # TODO review
+        nothing
+    else
+        (select(tn, :tensor, site)|>inds)[end]
+    end
+end

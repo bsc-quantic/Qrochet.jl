@@ -15,7 +15,7 @@ abstract type Ansatz end
 Quantum(@nospecialize tn::Ansatz) = tn.super
 
 # TODO forward `Quantum` methods
-for f in [:(Tenet.TensorNetwork), :ninputs, :noutputs, :sites, :socket, :(Tenet.tensors)]
+for f in [:(Tenet.TensorNetwork), :ninputs, :noutputs, :sites, :nsites, :socket, :(Tenet.tensors)]
     @eval $f(@nospecialize tn::Ansatz) = $f(Quantum(tn))
 end
 

@@ -1,5 +1,6 @@
 using Tenet
 using Tenet: letter
+using LinearAlgebra
 
 struct Chain <: Ansatz
     super::Quantum
@@ -131,4 +132,40 @@ function rightindex(::Open, tn::Chain, site::Site)
     else
         (select(tn, :tensor, site)|>inds)[end]
     end
+end
+
+canonize!(tn::Chain, args...; kwargs...) = canonize!(boundary(tn), tn, args...; kwargs...)
+
+# NOTE spectral weights are stored in a vector connected to the now virtual hyperindex!
+function canonize!(::Open, tn::Chain, site::Site; direction::Symbol)
+    left_inds = Symbol[]
+    right_inds = Symbol[]
+
+    virtualind = if direction === :left
+        site == Site(1) && throw(ArgumentError("Cannot left-canonize left-most tensor"))
+        push!(left_inds, leftindex(tn, site))
+
+        site == Site(nsites(tn)) || push!(right_inds, rightindex(tn, site))
+        push!(right_inds, Quantum(tn)[site])
+
+        only(left_inds)
+    elseif direction === :right
+        site == Site(nsites(tn)) && throw(ArgumentError("Cannot right-canonize right-most tensor"))
+        push!(right_inds, rightindex(tn, site))
+
+        site == Site(1) || push!(left_inds, leftindex(tn, site))
+        push!(left_inds, Quantum(tn)[site])
+
+        only(right_inds)
+    else
+        throw(ArgumentError("Unknown direction=:$direction"))
+    end
+
+    tmpind = gensym(:tmp)
+    qr!(TensorNetwork(tn); left_inds, right_inds, virtualind = tmpind)
+
+    contract!(TensorNetwork(tn), virtualind)
+    replace!(TensorNetwork(tn), tmpind => virtualind)
+
+    return tn
 end

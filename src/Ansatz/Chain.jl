@@ -142,7 +142,7 @@ canonize(tn::Chain, args...; kwargs...) = canonize!(deepcopy(tn), args...; kwarg
 canonize!(tn::Chain, args...; kwargs...) = canonize!(boundary(tn), tn, args...; kwargs...)
 
 # NOTE: in mode == :svd the spectral weights are stored in a vector connected to the now virtual hyperindex!
-function canonize!(::Open, tn::Chain, site::Site; direction::Symbol, mode::Symbol = :qr)
+function canonize!(::Open, tn::Chain, site::Site; direction::Symbol, mode = :qr)
     left_inds = Symbol[]
     right_inds = Symbol[]
 

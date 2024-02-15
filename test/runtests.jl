@@ -6,6 +6,7 @@ using Qrochet
     include("Quantum_test.jl")
     include("Ansatz/Product_test.jl")
     include("Ansatz/Chain_test.jl")
+    include("integration/QrochetQuacExt_test.jl")
 end
 
 @testset "Integration tests" verbose = true begin end

@@ -1,7 +1,7 @@
-@testset "QrochetQuacExt" begin
+@testset "Quac" begin
     using Quac
 
-    @testset "QFT_3qubits" begin
+    @testset "QFT" begin
         qft3circ = Quac.Algorithms.QFT(3)
         qft3qrochet = Quantum(qft3circ)
 

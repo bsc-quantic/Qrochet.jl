@@ -28,6 +28,8 @@
     @test boundary(qtn) == Open()
 
     @testset "canonize" begin
+        using Tenet
+
         function is_left_canonical(qtn, s::Site)
            label_r = rightindex(qtn, s)
            A = select(qtn, :tensor, s)
@@ -58,11 +60,18 @@
         for mode in [:qr, :svd]
             for i in 1:length(sites(qtn))
                 if i != 1
-                    @test is_right_canonical(canonize(qtn, Site(i); direction=:right, mode=mode), Site(i))
+                    canonized = canonize(qtn, Site(i); direction=:right, mode=mode)
+                    @test is_right_canonical(canonized, Site(i))
+                    @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperindConverter())), contract(TensorNetwork(qtn)))
                 elseif i != length(sites(qtn))
-                    @test is_left_canonical(canonize(qtn, Site(i); direction=:left, mode=mode), Site(i))
+                    canonized = canonize(qtn, Site(i); direction=:left, mode=mode)
+                    @test is_left_canonical(canonized, Site(i))
+                    @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperindConverter())), contract(TensorNetwork(qtn)))
                 end
             end
         end
+
+        # Ensure that svd creates a new tensor
+        @test length(tensors(canonize(qtn, Site(2); direction=:right, mode=:svd))) == 4
     end
 end

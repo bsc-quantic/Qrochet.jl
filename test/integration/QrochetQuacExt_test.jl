@@ -2,17 +2,20 @@
     using Quac
 
     @testset "QFT" begin
-        qft3circ = Quac.Algorithms.QFT(3)
-        qft3qrochet = Quantum(qft3circ)
+        n = 3
+        qftcirc = Quac.Algorithms.QFT(n)
+        qftqtn = Quantum(qftcirc)
 
-        # test sites (inputs and outputs) of the quantum circuit
-        for site in values(qft3qrochet.sites)
-            @test length(qft3qrochet.tn.indexmap[site]) == 1
-        end
+        siteinds = getindex.((qftqtn,), sites(qftqtn))
+        notsiteinds = filter(idx -> idx ∉ getindex.((qftqtn,), sites(qftqtn)), keys(TensorNetwork(qftqtn).indexmap))
 
-        # test inner tensors
-        for notsite in filter(idx -> idx ∉ values(qrqft3.sites), keys(qrqft3.tn.indexmap))
-            @test length(qft3qrochet.tn.indexmap[notsite]) > 1
-        end
+        # correct number of inputs and outputs
+        @test ninputs(qftqtn) == n
+        @test noutputs(qftqtn) == n
+        @test socket(qftqtn) == Operator()
+        # all open indices are sites
+        @test issetequal(inds(TensorNetwork(qftqtn), :open), siteinds)
+        # all inner indices are not sites
+        @test issetequal(inds(TensorNetwork(qftqtn), :inner), notsiteinds)
     end
 end

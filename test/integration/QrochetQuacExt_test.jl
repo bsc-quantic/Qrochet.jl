@@ -6,16 +6,15 @@
         qftcirc = Quac.Algorithms.QFT(n)
         qftqtn = Quantum(qftcirc)
 
-        siteinds = getindex.((qftqtn,), sites(qftqtn))
-        notsiteinds = filter(idx -> idx ∉ getindex.((qftqtn,), sites(qftqtn)), keys(TensorNetwork(qftqtn).indexmap))
-
         # correct number of inputs and outputs
         @test ninputs(qftqtn) == n
         @test noutputs(qftqtn) == n
         @test socket(qftqtn) == Operator()
         # all open indices are sites
+        siteinds = getindex.((qftqtn,), sites(qftqtn))
         @test issetequal(inds(TensorNetwork(qftqtn), :open), siteinds)
         # all inner indices are not sites
+        notsiteinds = filter(idx -> idx ∉ siteinds, keys(TensorNetwork(qftqtn).indexmap))
         @test issetequal(inds(TensorNetwork(qftqtn), :inner), notsiteinds)
     end
 end

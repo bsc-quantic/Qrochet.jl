@@ -112,15 +112,19 @@ function Chain(::Operator, boundary::Open, arrays::Vector{<:AbstractArray})
     Chain(Quantum(TensorNetwork(_tensors), sitemap), boundary)
 end
 
+rightsite(tn::Chain, site::Site) = rightsite(boundary(tn), tn, site)
+rightsite(::Open, tn::Chain, site::Site) = Site(site.id + 1)
+
+leftsite(tn::Chain, site::Site) = leftsite(boundary(tn), tn, site)
+leftsite(::Open, tn::Chain, site::Site) = Site(site.id - 1)
+
 leftindex(tn::Chain, site::Site) = leftindex(boundary(tn), tn, site)
 leftindex(::Periodic, tn::Chain, site::Site) = (select(tn, :tensor, site)|>inds)[end-1]
 function leftindex(::Open, tn::Chain, site::Site)
     if site == site"1"
         nothing
-    elseif site == Site(nsites(tn)) # TODO review
-        (select(tn, :tensor, site)|>inds)[end]
     else
-        (select(tn, :tensor, site)|>inds)[end-1]
+        (select(tn, :tensor, site)|>inds) ∩ (select(tn, :tensor, leftsite(tn, site))|>inds) |> only
     end
 end
 
@@ -130,7 +134,7 @@ function rightindex(::Open, tn::Chain, site::Site)
     if site == Site(nsites(tn)) # TODO review
         nothing
     else
-        (select(tn, :tensor, site)|>inds)[end]
+        (select(tn, :tensor, site)|>inds) ∩ (select(tn, :tensor, rightsite(tn, site))|>inds) |> only
     end
 end
 

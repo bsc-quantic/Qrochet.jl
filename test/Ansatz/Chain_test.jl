@@ -27,6 +27,30 @@
     @test issetequal(sites(qtn), [site"1", site"2", site"3", site"1'", site"2'", site"3'"])
     @test boundary(qtn) == Open()
 
+    @testset "Site" begin
+        using Qrochet: leftsite, rightsite
+        qtn = Chain(State(), Periodic(), [rand(2, 4, 4) for _ in 1:3])
+
+        @test leftsite(qtn, Site(1)) == Site(3)
+        @test leftsite(qtn, Site(2)) == Site(1)
+        @test leftsite(qtn, Site(3)) == Site(2)
+
+        @test rightsite(qtn, Site(1)) == Site(2)
+        @test rightsite(qtn, Site(2)) == Site(3)
+        @test rightsite(qtn, Site(3)) == Site(1)
+
+        qtn = Chain(State(), Open(), [rand(2, 2), rand(2, 2, 2), rand(2, 2)])
+
+        @test_throws ArgumentError leftsite(qtn, Site(1))
+        @test_throws ArgumentError rightsite(qtn, Site(3))
+
+        @test leftsite(qtn, Site(2)) == Site(1)
+        @test leftsite(qtn, Site(3)) == Site(2)
+
+        @test rightsite(qtn, Site(2)) == Site(3)
+        @test rightsite(qtn, Site(1)) == Site(2)
+    end
+
     @testset "canonize" begin
         using Tenet
 

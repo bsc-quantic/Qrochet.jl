@@ -8,7 +8,9 @@ using Qrochet
     include("Ansatz/Chain_test.jl")
 end
 
-@testset "Integration tests" verbose = true begin end
+@testset "Integration tests" verbose = true begin 
+    include("integration/QrochetQuacExt_test.jl")
+end
 
 if haskey(ENV, "ENABLE_AQUA_TESTS")
     @testset "Aqua" verbose = true begin

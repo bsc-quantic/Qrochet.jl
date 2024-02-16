@@ -16,7 +16,7 @@
         @test issetequal(inds(TensorNetwork(qftqtn), :open), siteinds)
 
         # all inner indices are not sites
-        notsiteinds = filter(idx -> idx ∉ siteinds, keys(TensorNetwork(qftqtn).indexmap))
+        notsiteinds = setdiff(inds(TensorNetwork(qftqtn)), siteinds)
         @test issetequal(inds(TensorNetwork(qftqtn), :inner), notsiteinds)
     end
 end

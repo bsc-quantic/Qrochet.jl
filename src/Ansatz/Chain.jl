@@ -114,14 +114,14 @@ end
 
 leftsite(tn::Chain, site::Site) = leftsite(boundary(tn), tn, site)
 function leftsite(::Open, tn::Chain, site::Site)
-    (site.id > length(sites(tn)) || site.id <= 1) && throw(ArgumentError("Invalid site $site"))
+    site.id ∉ range(2, length(sites(tn))) && throw(ArgumentError("Invalid site $site"))
     Site(site.id - 1)
 end
 leftsite(::Periodic, tn::Chain, site::Site) = Site(mod1(site.id - 1, length(sites(tn))))
 
 rightsite(tn::Chain, site::Site) = rightsite(boundary(tn), tn, site)
 function rightsite(::Open, tn::Chain, site::Site)
-    (site.id > length(sites(tn))-1 || site.id < 1) && throw(ArgumentError("Invalid site $site"))
+    site.id ∉ range(1, length(sites(tn))-1) && throw(ArgumentError("Invalid site $site"))
     Site(site.id + 1)
 end
 rightsite(::Periodic, tn::Chain, site::Site) = Site(mod1(site.id + 1, length(sites(tn))))

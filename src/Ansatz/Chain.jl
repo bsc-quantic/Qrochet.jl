@@ -112,48 +112,59 @@ function Chain(::Operator, boundary::Open, arrays::Vector{<:AbstractArray})
     Chain(Quantum(TensorNetwork(_tensors), sitemap), boundary)
 end
 
+leftsite(tn::Chain, site::Site) = leftsite(boundary(tn), tn, site)
+function leftsite(::Open, tn::Chain, site::Site)
+    site.id ∉ range(2, length(sites(tn))) && throw(ArgumentError("Invalid site $site"))
+    Site(site.id - 1)
+end
+leftsite(::Periodic, tn::Chain, site::Site) = Site(mod1(site.id - 1, length(sites(tn))))
+
+rightsite(tn::Chain, site::Site) = rightsite(boundary(tn), tn, site)
+function rightsite(::Open, tn::Chain, site::Site)
+    site.id ∉ range(1, length(sites(tn))-1) && throw(ArgumentError("Invalid site $site"))
+    Site(site.id + 1)
+end
+rightsite(::Periodic, tn::Chain, site::Site) = Site(mod1(site.id + 1, length(sites(tn))))
+
 leftindex(tn::Chain, site::Site) = leftindex(boundary(tn), tn, site)
-leftindex(::Periodic, tn::Chain, site::Site) = (select(tn, :tensor, site)|>inds)[end-1]
-function leftindex(::Open, tn::Chain, site::Site)
+function leftindex(::Union{Open, Periodic}, tn::Chain, site::Site)
     if site == site"1"
         nothing
-    elseif site == Site(nsites(tn)) # TODO review
-        (select(tn, :tensor, site)|>inds)[end]
     else
-        (select(tn, :tensor, site)|>inds)[end-1]
+        (select(tn, :tensor, site)|>inds) ∩ (select(tn, :tensor, leftsite(tn, site))|>inds) |> only
     end
 end
 
 rightindex(tn::Chain, site::Site) = rightindex(boundary(tn), tn, site)
-rightindex(::Periodic, tn::Chain, site::Site) = (select(tn, :tensor, site)|>inds)[end]
-function rightindex(::Open, tn::Chain, site::Site)
+function rightindex(::Union{Open, Periodic}, tn::Chain, site::Site)
     if site == Site(nsites(tn)) # TODO review
         nothing
     else
-        (select(tn, :tensor, site)|>inds)[end]
+        (select(tn, :tensor, site)|>inds) ∩ (select(tn, :tensor, rightsite(tn, site))|>inds) |> only
     end
 end
 
+canonize(tn::Chain, args...; kwargs...) = canonize!(deepcopy(tn), args...; kwargs...)
 canonize!(tn::Chain, args...; kwargs...) = canonize!(boundary(tn), tn, args...; kwargs...)
 
-# NOTE spectral weights are stored in a vector connected to the now virtual hyperindex!
-function canonize!(::Open, tn::Chain, site::Site; direction::Symbol)
+# NOTE: in mode == :svd the spectral weights are stored in a vector connected to the now virtual hyperindex!
+function canonize!(::Open, tn::Chain, site::Site; direction::Symbol, mode = :qr)
     left_inds = Symbol[]
     right_inds = Symbol[]
 
     virtualind = if direction === :left
-        site == Site(1) && throw(ArgumentError("Cannot left-canonize left-most tensor"))
-        push!(left_inds, leftindex(tn, site))
-
-        site == Site(nsites(tn)) || push!(right_inds, rightindex(tn, site))
-        push!(right_inds, Quantum(tn)[site])
-
-        only(left_inds)
-    elseif direction === :right
         site == Site(nsites(tn)) && throw(ArgumentError("Cannot right-canonize right-most tensor"))
         push!(right_inds, rightindex(tn, site))
 
         site == Site(1) || push!(left_inds, leftindex(tn, site))
+        push!(left_inds, Quantum(tn)[site])
+
+        only(right_inds)
+    elseif direction === :right
+        site == Site(1) && throw(ArgumentError("Cannot left-canonize left-most tensor"))
+        push!(right_inds, leftindex(tn, site))
+
+        site == Site(nsites(tn)) || push!(left_inds, rightindex(tn, site))
         push!(left_inds, Quantum(tn)[site])
 
         only(right_inds)
@@ -162,7 +173,13 @@ function canonize!(::Open, tn::Chain, site::Site; direction::Symbol)
     end
 
     tmpind = gensym(:tmp)
-    qr!(TensorNetwork(tn); left_inds, right_inds, virtualind = tmpind)
+    if mode == :qr
+        qr!(TensorNetwork(tn); left_inds, right_inds, virtualind = tmpind)
+    elseif mode == :svd
+        svd!(TensorNetwork(tn); left_inds, right_inds, virtualind = tmpind)
+    else
+        throw(ArgumentError("Unknown mode=:$mode"))
+    end
 
     contract!(TensorNetwork(tn), virtualind)
     replace!(TensorNetwork(tn), tmpind => virtualind)

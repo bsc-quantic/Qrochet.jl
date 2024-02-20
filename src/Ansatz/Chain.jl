@@ -197,7 +197,7 @@ Transform a `Chain` tensor network into the mixed-canonical form, that is,
 for i < center the tensors are left-canonical and for i > center the tensors are right-canonical,
 and in the center there is a matrix with singular values.
 """
-function mixed_canonical_form!(::Open, tn::Chain, center::Site)
+function mixed_canonical_form!(::Open, tn::Chain, center::Site) # TODO: center could be a range of sites
     N = length(sites(tn))
 
     # Left-to-right QR sweep -> get left-canonical tensors

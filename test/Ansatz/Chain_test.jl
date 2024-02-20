@@ -100,7 +100,7 @@
             @test length(tensors(canonize_site(qtn, Site(2); direction=:right, mode=:svd))) == 4
         end
 
-        @testset "mixed_canonical_form" begin
+        @testset "mixed_canonize" begin
             qtn = Chain(State(), Open(), [rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
             canonized = mixed_canonize(qtn, Site(3))
 

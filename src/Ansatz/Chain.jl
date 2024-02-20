@@ -205,7 +205,7 @@ function mixed_canonize!(::Open, tn::Chain, center::Site) # TODO: center could b
         canonize_site!(tn, Site(i); direction = :left, mode = :qr)
     end
 
-    # Right-to-left QR sweep -> get left-canonical tensors for i > center
+    # Right-to-left QR sweep -> get right-canonical tensors for i > center
     for i in N:-1:1
         if i > center.id
             canonize_site!(tn, Site(i); direction = :right, mode = :qr)

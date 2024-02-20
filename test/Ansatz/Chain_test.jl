@@ -51,7 +51,7 @@
         @test rightsite(qtn, Site(1)) == Site(2)
     end
 
-    @testset "Canonical forms" begin
+    @testset "Canonization" begin
         using Tenet
 
         function is_left_canonical(qtn, s::Site)
@@ -76,20 +76,20 @@
             end
         end
 
-        @testset "canonize" begin
+        @testset "canonize_site" begin
             qtn = Chain(State(), Open(), [rand(4, 4), rand(4, 4, 4), rand(4, 4)])
 
-            @test_throws ArgumentError canonize!(qtn, Site(1); direction=:right)
-            @test_throws ArgumentError canonize!(qtn, Site(3); direction=:left)
+            @test_throws ArgumentError canonize_site!(qtn, Site(1); direction=:right)
+            @test_throws ArgumentError canonize_site!(qtn, Site(3); direction=:left)
 
             for mode in [:qr, :svd]
                 for i in 1:length(sites(qtn))
                     if i != 1
-                        canonized = canonize(qtn, Site(i); direction=:right, mode=mode)
+                        canonized = canonize_site(qtn, Site(i); direction=:right, mode=mode)
                         @test is_right_canonical(canonized, Site(i))
                         @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperindConverter())), contract(TensorNetwork(qtn)))
                     elseif i != length(sites(qtn))
-                        canonized = canonize(qtn, Site(i); direction=:left, mode=mode)
+                        canonized = canonize_site(qtn, Site(i); direction=:left, mode=mode)
                         @test is_left_canonical(canonized, Site(i))
                         @test isapprox(contract(transform(TensorNetwork(canonized), Tenet.HyperindConverter())), contract(TensorNetwork(qtn)))
                     end
@@ -97,12 +97,12 @@
             end
 
             # Ensure that svd creates a new tensor
-            @test length(tensors(canonize(qtn, Site(2); direction=:right, mode=:svd))) == 4
+            @test length(tensors(canonize_site(qtn, Site(2); direction=:right, mode=:svd))) == 4
         end
 
         @testset "mixed_canonical_form" begin
             qtn = Chain(State(), Open(), [rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
-            canonized = mixed_canonical_form(qtn, Site(3))
+            canonized = mixed_canonize(qtn, Site(3))
 
             @test is_left_canonical(canonized, Site(1))
             @test is_left_canonical(canonized, Site(2))

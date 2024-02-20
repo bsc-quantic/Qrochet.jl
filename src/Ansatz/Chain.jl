@@ -153,7 +153,7 @@ function canonize!(::Open, tn::Chain, site::Site; direction::Symbol, mode = :qr)
     right_inds = Symbol[]
 
     virtualind = if direction === :left
-        site == Site(nsites(tn)) && throw(ArgumentError("Cannot right-canonize right-most tensor"))
+        site == Site(nsites(tn)) && throw(ArgumentError("Cannot left-canonize right-most tensor"))
         push!(right_inds, rightindex(tn, site))
 
         site == Site(1) || push!(left_inds, leftindex(tn, site))
@@ -161,7 +161,7 @@ function canonize!(::Open, tn::Chain, site::Site; direction::Symbol, mode = :qr)
 
         only(right_inds)
     elseif direction === :right
-        site == Site(1) && throw(ArgumentError("Cannot left-canonize left-most tensor"))
+        site == Site(1) && throw(ArgumentError("Cannot right-canonize left-most tensor"))
         push!(right_inds, leftindex(tn, site))
 
         site == Site(nsites(tn)) || push!(left_inds, rightindex(tn, site))

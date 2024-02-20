@@ -191,7 +191,7 @@ mixed_canonize(tn::Chain, args...; kwargs...) = mixed_canonize!(deepcopy(tn), ar
 mixed_canonize!(tn::Chain, args...; kwargs...) = mixed_canonize!(boundary(tn), tn, args...; kwargs...)
 
 """
-mixed_canonize!(boundary::Boundary, tn::Chain, center::Site)
+    mixed_canonize!(boundary::Boundary, tn::Chain, center::Site)
 
 Transform a `Chain` tensor network into the mixed-canonical form, that is,
 for i < center the tensors are left-canonical and for i > center the tensors are right-canonical,

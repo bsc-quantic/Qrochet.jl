@@ -144,16 +144,16 @@ function rightindex(::Union{Open, Periodic}, tn::Chain, site::Site)
     end
 end
 
-canonize(tn::Chain, args...; kwargs...) = canonize!(deepcopy(tn), args...; kwargs...)
-canonize!(tn::Chain, args...; kwargs...) = canonize!(boundary(tn), tn, args...; kwargs...)
+canonize_site(tn::Chain, args...; kwargs...) = canonize_site!(deepcopy(tn), args...; kwargs...)
+canonize_site!(tn::Chain, args...; kwargs...) = canonize_site!(boundary(tn), tn, args...; kwargs...)
 
 # NOTE: in mode == :svd the spectral weights are stored in a vector connected to the now virtual hyperindex!
-function canonize!(::Open, tn::Chain, site::Site; direction::Symbol, mode = :qr)
+function canonize_site!(::Open, tn::Chain, site::Site; direction::Symbol, mode = :qr)
     left_inds = Symbol[]
     right_inds = Symbol[]
 
     virtualind = if direction === :left
-        site == Site(nsites(tn)) && throw(ArgumentError("Cannot right-canonize right-most tensor"))
+        site == Site(nsites(tn)) && throw(ArgumentError("Cannot left-canonize right-most tensor"))
         push!(right_inds, rightindex(tn, site))
 
         site == Site(1) || push!(left_inds, leftindex(tn, site))
@@ -161,7 +161,7 @@ function canonize!(::Open, tn::Chain, site::Site; direction::Symbol, mode = :qr)
 
         only(right_inds)
     elseif direction === :right
-        site == Site(1) && throw(ArgumentError("Cannot left-canonize left-most tensor"))
+        site == Site(1) && throw(ArgumentError("Cannot right-canonize left-most tensor"))
         push!(right_inds, leftindex(tn, site))
 
         site == Site(nsites(tn)) || push!(left_inds, rightindex(tn, site))
@@ -183,6 +183,38 @@ function canonize!(::Open, tn::Chain, site::Site; direction::Symbol, mode = :qr)
 
     contract!(TensorNetwork(tn), virtualind)
     replace!(TensorNetwork(tn), tmpind => virtualind)
+
+    return tn
+end
+
+mixed_canonize(tn::Chain, args...; kwargs...) = mixed_canonize!(deepcopy(tn), args...; kwargs...)
+mixed_canonize!(tn::Chain, args...; kwargs...) = mixed_canonize!(boundary(tn), tn, args...; kwargs...)
+
+"""
+    mixed_canonize!(boundary::Boundary, tn::Chain, center::Site)
+
+Transform a `Chain` tensor network into the mixed-canonical form, that is,
+for i < center the tensors are left-canonical and for i > center the tensors are right-canonical,
+and in the center there is a matrix with singular values.
+"""
+function mixed_canonize!(::Open, tn::Chain, center::Site) # TODO: center could be a range of sites
+    N = length(sites(tn))
+
+    # Left-to-right QR sweep -> get left-canonical tensors
+    for i in 1:N-1
+        canonize_site!(tn, Site(i); direction = :left, mode = :qr)
+    end
+
+    # Right-to-left QR sweep -> get left-canonical tensors for i > center
+    for i in N:-1:1
+        if i > center.id
+            canonize_site!(tn, Site(i); direction = :right, mode = :qr)
+        elseif i == center.id
+            canonize_site!(tn, Site(i); direction = :left, mode = :svd)
+        else
+            canonize_site!(tn, Site(i); direction = :left, mode = :qr)
+        end
+    end
 
     return tn
 end

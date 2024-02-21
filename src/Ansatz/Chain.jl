@@ -121,26 +121,26 @@ leftsite(::Periodic, tn::Chain, site::Site) = Site(mod1(site.id - 1, length(site
 
 rightsite(tn::Chain, site::Site) = rightsite(boundary(tn), tn, site)
 function rightsite(::Open, tn::Chain, site::Site)
-    site.id ∉ range(1, length(sites(tn))-1) && throw(ArgumentError("Invalid site $site"))
+    site.id ∉ range(1, length(sites(tn)) - 1) && throw(ArgumentError("Invalid site $site"))
     Site(site.id + 1)
 end
 rightsite(::Periodic, tn::Chain, site::Site) = Site(mod1(site.id + 1, length(sites(tn))))
 
 leftindex(tn::Chain, site::Site) = leftindex(boundary(tn), tn, site)
-function leftindex(::Union{Open, Periodic}, tn::Chain, site::Site)
+function leftindex(::Union{Open,Periodic}, tn::Chain, site::Site)
     if site == site"1"
         nothing
     else
-        (select(tn, :tensor, site)|>inds) ∩ (select(tn, :tensor, leftsite(tn, site))|>inds) |> only
+        (select(tn, :tensor, site) |> inds) ∩ (select(tn, :tensor, leftsite(tn, site)) |> inds) |> only
     end
 end
 
 rightindex(tn::Chain, site::Site) = rightindex(boundary(tn), tn, site)
-function rightindex(::Union{Open, Periodic}, tn::Chain, site::Site)
+function rightindex(::Union{Open,Periodic}, tn::Chain, site::Site)
     if site == Site(nsites(tn)) # TODO review
         nothing
     else
-        (select(tn, :tensor, site)|>inds) ∩ (select(tn, :tensor, rightsite(tn, site))|>inds) |> only
+        (select(tn, :tensor, site) |> inds) ∩ (select(tn, :tensor, rightsite(tn, site)) |> inds) |> only
     end
 end
 

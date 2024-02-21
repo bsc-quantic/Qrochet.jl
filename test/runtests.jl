@@ -8,7 +8,7 @@ using Qrochet
     include("Ansatz/Chain_test.jl")
 end
 
-@testset "Integration tests" verbose = true begin 
+@testset "Integration tests" verbose = true begin
     include("integration/QrochetQuacExt_test.jl")
 end
 

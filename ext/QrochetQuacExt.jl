@@ -32,10 +32,10 @@ function Qrochet.Quantum(circuit::Circuit)
     end
 
     sites = merge(
-        Dict([Site(site; dual=true) => first(index) for (site, index) in enumerate(wire)]),
-        Dict([Site(site; dual=false) => last(index) for (site, index) in enumerate(wire)])
+        Dict([Site(site; dual = true) => first(index) for (site, index) in enumerate(wire)]),
+        Dict([Site(site; dual = false) => last(index) for (site, index) in enumerate(wire)]),
     )
-    
+
     Quantum(Tenet.TensorNetwork(tensors), sites)
 end
 

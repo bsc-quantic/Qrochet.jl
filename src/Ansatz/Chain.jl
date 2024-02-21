@@ -187,6 +187,33 @@ function canonize_site!(::Open, tn::Chain, site::Site; direction::Symbol, mode =
     return tn
 end
 
+function truncate!(qtn::Chain, bond; threshold::Union{Nothing,Real} = nothing, maxdim::Union{Nothing,Int} = nothing)
+    # TODO replace for select(:between)
+    vind = rightindex(qtn, bond[1])
+    if vind != leftindex(qtn, bond[2])
+        throw(ArgumentError("Invalid bond $bond"))
+    end
+
+    if vind ∉ inds(TensorNetwork(qtn), :hyper)
+        throw(ArgumentError("Can't access the spectrum on bond $bond"))
+    end
+
+    tensor = TensorNetwork(qtn)[vind]
+    spectrum = parent(tensor)
+
+    extent = if !isnothing(maxdim)
+        1:maxdim
+    elseif !isnothing(threshold)
+        findall(>(threshold) ∘ abs, spectrum)
+    else
+        throw(ArgumentError("Either `threshold` or `maxdim` must be provided"))
+    end
+
+    slice!(TensorNetwork(qtn), vind, extent)
+
+    return qtn
+end
+
 mixed_canonize(tn::Chain, args...; kwargs...) = mixed_canonize!(deepcopy(tn), args...; kwargs...)
 mixed_canonize!(tn::Chain, args...; kwargs...) = mixed_canonize!(boundary(tn), tn, args...; kwargs...)
 

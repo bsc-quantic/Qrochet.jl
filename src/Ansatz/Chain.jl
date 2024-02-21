@@ -198,22 +198,14 @@ for i < center the tensors are left-canonical and for i > center the tensors are
 and in the center there is a matrix with singular values.
 """
 function mixed_canonize!(::Open, tn::Chain, center::Site) # TODO: center could be a range of sites
-    N = length(sites(tn))
-
-    # Left-to-right QR sweep -> get left-canonical tensors
-    for i in 1:N-1
-        canonize_site!(tn, Site(i); direction = :left, method = :qr)
+    # left-to-right QR sweep (left-canonical tensors)
+    for i in 1:center.id-1
+        canonize_site!(tn, Site(i); direction = :right, method = :qr)
     end
 
-    # Right-to-left QR sweep -> get right-canonical tensors for i > center
-    for i in N:-1:1
-        if i > center.id
-            canonize_site!(tn, Site(i); direction = :right, method = :qr)
-        elseif i == center.id
-            canonize_site!(tn, Site(i); direction = :left, method = :svd)
-        else
-            canonize_site!(tn, Site(i); direction = :left, method = :qr)
-        end
+    # right-to-left QR sweep (right-canonical tensors)
+    for i in nsites(tn):-1:center.id+1
+        canonize_site!(tn, Site(i); direction = :left, method = :qr)
     end
 
     return tn

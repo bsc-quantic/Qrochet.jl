@@ -147,8 +147,8 @@ end
 canonize_site(tn::Chain, args...; kwargs...) = canonize_site!(deepcopy(tn), args...; kwargs...)
 canonize_site!(tn::Chain, args...; kwargs...) = canonize_site!(boundary(tn), tn, args...; kwargs...)
 
-# NOTE: in mode == :svd the spectral weights are stored in a vector connected to the now virtual hyperindex!
-function canonize_site!(::Open, tn::Chain, site::Site; direction::Symbol, mode = :qr)
+# NOTE: in method == :svd the spectral weights are stored in a vector connected to the now virtual hyperindex!
+function canonize_site!(::Open, tn::Chain, site::Site; direction::Symbol, method = :qr)
     left_inds = Symbol[]
     right_inds = Symbol[]
 
@@ -173,12 +173,12 @@ function canonize_site!(::Open, tn::Chain, site::Site; direction::Symbol, mode =
     end
 
     tmpind = gensym(:tmp)
-    if mode == :qr
-        qr!(TensorNetwork(tn); left_inds, right_inds, virtualind = tmpind)
-    elseif mode == :svd
+    if method === :svd
         svd!(TensorNetwork(tn); left_inds, right_inds, virtualind = tmpind)
+    elseif method === :qr
+        qr!(TensorNetwork(tn); left_inds, right_inds, virtualind = tmpind)
     else
-        throw(ArgumentError("Unknown mode=:$mode"))
+        throw(ArgumentError("Unknown factorization method=:$method"))
     end
 
     contract!(TensorNetwork(tn), virtualind)
@@ -202,17 +202,17 @@ function mixed_canonize!(::Open, tn::Chain, center::Site) # TODO: center could b
 
     # Left-to-right QR sweep -> get left-canonical tensors
     for i in 1:N-1
-        canonize_site!(tn, Site(i); direction = :left, mode = :qr)
+        canonize_site!(tn, Site(i); direction = :left, method = :qr)
     end
 
     # Right-to-left QR sweep -> get right-canonical tensors for i > center
     for i in N:-1:1
         if i > center.id
-            canonize_site!(tn, Site(i); direction = :right, mode = :qr)
+            canonize_site!(tn, Site(i); direction = :right, method = :qr)
         elseif i == center.id
-            canonize_site!(tn, Site(i); direction = :left, mode = :svd)
+            canonize_site!(tn, Site(i); direction = :left, method = :svd)
         else
-            canonize_site!(tn, Site(i); direction = :left, mode = :qr)
+            canonize_site!(tn, Site(i); direction = :left, method = :qr)
         end
     end
 

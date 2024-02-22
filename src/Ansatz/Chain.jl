@@ -187,6 +187,36 @@ function canonize_site!(::Open, tn::Chain, site::Site; direction::Symbol, method
     return tn
 end
 
+function isleftcanonical(qtn::Chain, site; atol::Real = 1e-12)
+    right_ind = rightindex(qtn, site)
+
+    # we are at right-most site, which cannot be left-canonical
+    if isnothing(right_ind)
+        return false
+    end
+
+    # TODO is replace(conj(A)...) copying too much?
+    tensor = select(qtn, :tensor, site)
+    contracted = contract(tensor, replace(conj(tensor), right_ind => :new_ind_name))
+
+    return isapprox(contracted, Matrix{Float64}(I, size(A, right_ind), size(A, right_ind)); atol)
+end
+
+function isrightcanonical(qtn::Chain, site; atol::Real = 1e-12)
+    left_ind = leftindex(qtn, site)
+
+    # we are at left-most site, which cannot be right-canonical
+    if isnothing(left_ind)
+        return false
+    end
+
+    #TODO is replace(conj(A)...) copying too much?
+    tensor = select(qtn, :tensor, site)
+    contracted = contract(tensor, replace(conj(tensor), left_ind => :new_ind_name))
+
+    return isapprox(contracted, Matrix{Float64}(I, size(A, left_ind), size(A, left_ind)); atol)
+end
+
 mixed_canonize(tn::Chain, args...; kwargs...) = mixed_canonize!(deepcopy(tn), args...; kwargs...)
 mixed_canonize!(tn::Chain, args...; kwargs...) = mixed_canonize!(boundary(tn), tn, args...; kwargs...)
 

@@ -54,28 +54,6 @@
     @testset "Canonization" begin
         using Tenet
 
-        function is_left_canonical(qtn, s::Site)
-            label_r = rightindex(qtn, s)
-            A = select(qtn, :tensor, s)
-            try
-                contracted = contract(A, replace(conj(A), label_r => :new_ind_name))
-                return isapprox(contracted, Matrix{Float64}(I, size(A, label_r), size(A, label_r)), atol = 1e-12)
-            catch
-                return false
-            end
-        end
-
-        function is_right_canonical(qtn, s::Site)
-            label_l = leftindex(qtn, s)
-            A = select(qtn, :tensor, s)
-            try
-                contracted = contract(A, replace(conj(A), label_l => :new_ind_name))
-                return isapprox(contracted, Matrix{Float64}(I, size(A, label_l), size(A, label_l)), atol = 1e-12)
-            catch
-                return false
-            end
-        end
-
         @testset "canonize_site" begin
             qtn = Chain(State(), Open(), [rand(4, 4), rand(4, 4, 4), rand(4, 4)])
 

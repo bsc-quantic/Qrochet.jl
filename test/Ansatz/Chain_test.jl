@@ -57,44 +57,52 @@
         @testset "canonize_site" begin
             qtn = Chain(State(), Open(), [rand(4, 4), rand(4, 4, 4), rand(4, 4)])
 
-            @test_throws ArgumentError canonize_site!(qtn, Site(1); direction = :right)
-            @test_throws ArgumentError canonize_site!(qtn, Site(3); direction = :left)
+            @test_throws ArgumentError canonize_site!(qtn, Site(1); direction = :left)
+            @test_throws ArgumentError canonize_site!(qtn, Site(3); direction = :right)
 
             for method in [:qr, :svd]
-                for i in 1:length(sites(qtn))
-                    if i != 1
-                        canonized = canonize_site(qtn, Site(i); direction = :right, method = method)
-                        @test is_right_canonical(canonized, Site(i))
-                        @test isapprox(
-                            contract(transform(TensorNetwork(canonized), Tenet.HyperindConverter())),
-                            contract(TensorNetwork(qtn)),
-                        )
-                    elseif i != length(sites(qtn))
-                        canonized = canonize_site(qtn, Site(i); direction = :left, method = method)
-                        @test is_left_canonical(canonized, Site(i))
-                        @test isapprox(
-                            contract(transform(TensorNetwork(canonized), Tenet.HyperindConverter())),
-                            contract(TensorNetwork(qtn)),
-                        )
-                    end
-                end
+                canonized = canonize_site(qtn, site"1"; direction = :right, method = method)
+                @test isleftcanonical(canonized, site"1")
+                @test isapprox(
+                    contract(transform(TensorNetwork(canonized), Tenet.HyperindConverter())),
+                    contract(TensorNetwork(qtn)),
+                )
+
+                canonized = canonize_site(qtn, site"2"; direction = :right, method = method)
+                @test isleftcanonical(canonized, site"2")
+                @test isapprox(
+                    contract(transform(TensorNetwork(canonized), Tenet.HyperindConverter())),
+                    contract(TensorNetwork(qtn)),
+                )
+
+                canonized = canonize_site(qtn, site"2"; direction = :left, method = method)
+                @test isrightcanonical(canonized, site"2")
+                @test isapprox(
+                    contract(transform(TensorNetwork(canonized), Tenet.HyperindConverter())),
+                    contract(TensorNetwork(qtn)),
+                )
+
+                canonized = canonize_site(qtn, site"3"; direction = :left, method = method)
+                @test isrightcanonical(canonized, site"3")
+                @test isapprox(
+                    contract(transform(TensorNetwork(canonized), Tenet.HyperindConverter())),
+                    contract(TensorNetwork(qtn)),
+                )
             end
 
             # Ensure that svd creates a new tensor
-            @test length(tensors(canonize_site(qtn, Site(2); direction = :right, method = :svd))) == 4
+            @test length(tensors(canonize_site(qtn, Site(2); direction = :left, method = :svd))) == 4
         end
 
         @testset "mixed_canonize" begin
             qtn = Chain(State(), Open(), [rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
             canonized = mixed_canonize(qtn, Site(3))
 
-            @test is_left_canonical(canonized, Site(1))
-            @test is_left_canonical(canonized, Site(2))
-            @test is_left_canonical(canonized, Site(3))
-            @test is_right_canonical(canonized, Site(4))
-            @test is_right_canonical(canonized, Site(5))
-
-            @test length(tensors(canonized)) == 6 # 5 tensors + 1 singular value matrix
+            @test isleftcanonical(canonized, Site(1))
+            @test isleftcanonical(canonized, Site(2))
+            @test !isleftcanonical(canonized, Site(3)) && !isrightcanonical(canonized, Site(3))
+            @test isrightcanonical(canonized, Site(4))
+            @test isrightcanonical(canonized, Site(5))
 
             @test isapprox(
                 contract(transform(TensorNetwork(canonized), Tenet.HyperindConverter())),

@@ -147,24 +147,24 @@ end
 canonize_site(tn::Chain, args...; kwargs...) = canonize_site!(deepcopy(tn), args...; kwargs...)
 canonize_site!(tn::Chain, args...; kwargs...) = canonize_site!(boundary(tn), tn, args...; kwargs...)
 
-# NOTE: in mode == :svd the spectral weights are stored in a vector connected to the now virtual hyperindex!
-function canonize_site!(::Open, tn::Chain, site::Site; direction::Symbol, mode = :qr)
+# NOTE: in method == :svd the spectral weights are stored in a vector connected to the now virtual hyperindex!
+function canonize_site!(::Open, tn::Chain, site::Site; direction::Symbol, method = :qr)
     left_inds = Symbol[]
     right_inds = Symbol[]
 
     virtualind = if direction === :left
-        site == Site(nsites(tn)) && throw(ArgumentError("Cannot left-canonize right-most tensor"))
-        push!(right_inds, rightindex(tn, site))
-
-        site == Site(1) || push!(left_inds, leftindex(tn, site))
-        push!(left_inds, Quantum(tn)[site])
-
-        only(right_inds)
-    elseif direction === :right
         site == Site(1) && throw(ArgumentError("Cannot right-canonize left-most tensor"))
         push!(right_inds, leftindex(tn, site))
 
         site == Site(nsites(tn)) || push!(left_inds, rightindex(tn, site))
+        push!(left_inds, Quantum(tn)[site])
+
+        only(right_inds)
+    elseif direction === :right
+        site == Site(nsites(tn)) && throw(ArgumentError("Cannot left-canonize right-most tensor"))
+        push!(right_inds, rightindex(tn, site))
+
+        site == Site(1) || push!(left_inds, leftindex(tn, site))
         push!(left_inds, Quantum(tn)[site])
 
         only(right_inds)
@@ -173,18 +173,52 @@ function canonize_site!(::Open, tn::Chain, site::Site; direction::Symbol, mode =
     end
 
     tmpind = gensym(:tmp)
-    if mode == :qr
-        qr!(TensorNetwork(tn); left_inds, right_inds, virtualind = tmpind)
-    elseif mode == :svd
+    if method === :svd
         svd!(TensorNetwork(tn); left_inds, right_inds, virtualind = tmpind)
+    elseif method === :qr
+        qr!(TensorNetwork(tn); left_inds, right_inds, virtualind = tmpind)
     else
-        throw(ArgumentError("Unknown mode=:$mode"))
+        throw(ArgumentError("Unknown factorization method=:$method"))
     end
 
     contract!(TensorNetwork(tn), virtualind)
     replace!(TensorNetwork(tn), tmpind => virtualind)
 
     return tn
+end
+
+function isleftcanonical(qtn::Chain, site; atol::Real = 1e-12)
+    right_ind = rightindex(qtn, site)
+
+    # we are at right-most site, which cannot be left-canonical
+    if isnothing(right_ind)
+        return false
+    end
+
+    # TODO is replace(conj(A)...) copying too much?
+    tensor = select(qtn, :tensor, site)
+    contracted = contract(tensor, replace(conj(tensor), right_ind => :new_ind_name))
+    n = size(tensor, right_ind)
+    identity_matrix = Matrix(I, n, n)
+
+    return isapprox(contracted, identity_matrix; atol)
+end
+
+function isrightcanonical(qtn::Chain, site; atol::Real = 1e-12)
+    left_ind = leftindex(qtn, site)
+
+    # we are at left-most site, which cannot be right-canonical
+    if isnothing(left_ind)
+        return false
+    end
+
+    #TODO is replace(conj(A)...) copying too much?
+    tensor = select(qtn, :tensor, site)
+    contracted = contract(tensor, replace(conj(tensor), left_ind => :new_ind_name))
+    n = size(tensor, left_ind)
+    identity_matrix = Matrix(I, n, n)
+
+    return isapprox(contracted, identity_matrix; atol)
 end
 
 mixed_canonize(tn::Chain, args...; kwargs...) = mixed_canonize!(deepcopy(tn), args...; kwargs...)
@@ -198,22 +232,14 @@ for i < center the tensors are left-canonical and for i > center the tensors are
 and in the center there is a matrix with singular values.
 """
 function mixed_canonize!(::Open, tn::Chain, center::Site) # TODO: center could be a range of sites
-    N = length(sites(tn))
-
-    # Left-to-right QR sweep -> get left-canonical tensors
-    for i in 1:N-1
-        canonize_site!(tn, Site(i); direction = :left, mode = :qr)
+    # left-to-right QR sweep (left-canonical tensors)
+    for i in 1:center.id-1
+        canonize_site!(tn, Site(i); direction = :right, method = :qr)
     end
 
-    # Right-to-left QR sweep -> get right-canonical tensors for i > center
-    for i in N:-1:1
-        if i > center.id
-            canonize_site!(tn, Site(i); direction = :right, mode = :qr)
-        elseif i == center.id
-            canonize_site!(tn, Site(i); direction = :left, mode = :svd)
-        else
-            canonize_site!(tn, Site(i); direction = :left, mode = :qr)
-        end
+    # right-to-left QR sweep (right-canonical tensors)
+    for i in nsites(tn):-1:center.id+1
+        canonize_site!(tn, Site(i); direction = :left, method = :qr)
     end
 
     return tn

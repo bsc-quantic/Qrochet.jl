@@ -187,6 +187,16 @@ function canonize_site!(::Open, tn::Chain, site::Site; direction::Symbol, mode =
     return tn
 end
 
+"""
+    truncate!(qtn::Chain, bond; threshold::Union{Nothing,Real} = nothing, maxdim::Union{Nothing,Int} = nothing)
+
+Truncate the dimension of the virtual `bond`` of the [`Chain`](@ref) Tensor Network by keeping only the `maxdim` largest Schmidt coefficients or those larger than`threshold`.
+
+# Notes
+
+  - Either `threshold` or `maxdim` must be provided. If both are provided, `maxdim` is used.
+  - The bond must contain the Schmidt coefficients, i.e. a site canonization must be performed before calling `truncate!`.
+"""
 function truncate!(qtn::Chain, bond; threshold::Union{Nothing,Real} = nothing, maxdim::Union{Nothing,Int} = nothing)
     # TODO replace for select(:between)
     vind = rightindex(qtn, bond[1])

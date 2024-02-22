@@ -198,8 +198,10 @@ function isleftcanonical(qtn::Chain, site; atol::Real = 1e-12)
     # TODO is replace(conj(A)...) copying too much?
     tensor = select(qtn, :tensor, site)
     contracted = contract(tensor, replace(conj(tensor), right_ind => :new_ind_name))
+    n = size(tensor, right_ind)
+    identity_matrix = Matrix(I, n, n)
 
-    return isapprox(contracted, Matrix{Float64}(I, size(A, right_ind), size(A, right_ind)); atol)
+    return isapprox(contracted, identity_matrix; atol)
 end
 
 function isrightcanonical(qtn::Chain, site; atol::Real = 1e-12)
@@ -213,8 +215,10 @@ function isrightcanonical(qtn::Chain, site; atol::Real = 1e-12)
     #TODO is replace(conj(A)...) copying too much?
     tensor = select(qtn, :tensor, site)
     contracted = contract(tensor, replace(conj(tensor), left_ind => :new_ind_name))
+    n = size(tensor, left_ind)
+    identity_matrix = Matrix(I, n, n)
 
-    return isapprox(contracted, Matrix{Float64}(I, size(A, left_ind), size(A, left_ind)); atol)
+    return isapprox(contracted, identity_matrix; atol)
 end
 
 mixed_canonize(tn::Chain, args...; kwargs...) = mixed_canonize!(deepcopy(tn), args...; kwargs...)

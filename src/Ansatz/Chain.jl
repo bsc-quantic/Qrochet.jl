@@ -187,6 +187,45 @@ function canonize_site!(::Open, tn::Chain, site::Site; direction::Symbol, method
     return tn
 end
 
+truncate(tn::Chain, args...; kwargs...) = truncate!(deepcopy(tn), args...; kwargs...)
+
+"""
+    truncate!(qtn::Chain, bond; threshold::Union{Nothing,Real} = nothing, maxdim::Union{Nothing,Int} = nothing)
+
+Truncate the dimension of the virtual `bond`` of the [`Chain`](@ref) Tensor Network by keeping only the `maxdim` largest Schmidt coefficients or those larger than`threshold`.
+
+# Notes
+
+  - Either `threshold` or `maxdim` must be provided. If both are provided, `maxdim` is used.
+  - The bond must contain the Schmidt coefficients, i.e. a site canonization must be performed before calling `truncate!`.
+"""
+function truncate!(qtn::Chain, bond; threshold::Union{Nothing,Real} = nothing, maxdim::Union{Nothing,Int} = nothing)
+    # TODO replace for select(:between)
+    vind = rightindex(qtn, bond[1])
+    if vind != leftindex(qtn, bond[2])
+        throw(ArgumentError("Invalid bond $bond"))
+    end
+
+    if vind ∉ inds(TensorNetwork(qtn), :hyper)
+        throw(MissingSchmidtCoefficientsException(bond))
+    end
+
+    tensor = TensorNetwork(qtn)[vind]
+    spectrum = parent(tensor)
+
+    extent = if !isnothing(maxdim)
+        1:maxdim
+    elseif !isnothing(threshold)
+        findall(>(threshold) ∘ abs, spectrum)
+    else
+        throw(ArgumentError("Either `threshold` or `maxdim` must be provided"))
+    end
+
+    slice!(TensorNetwork(qtn), vind, extent)
+
+    return qtn
+end
+
 function isleftcanonical(qtn::Chain, site; atol::Real = 1e-12)
     right_ind = rightindex(qtn, site)
 

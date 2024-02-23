@@ -17,8 +17,8 @@ export Product
 include("Ansatz/Chain.jl")
 export Chain
 export MPS, pMPS, MPO, pMPO
-export leftindex, rightindex, canonize_site, canonize_site!, truncate!
-export mixed_canonize, mixed_canonize!, isleftcanonical, isrightcanonical
+export leftindex, rightindex, isleftcanonical, isrightcanonical
+export canonize_site, canonize_site!, truncate!, mixed_canonize, mixed_canonize!
 
 # reexports from Tenet
 using Tenet

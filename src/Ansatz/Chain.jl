@@ -189,12 +189,6 @@ end
 
 truncate(tn::Chain, args...; kwargs...) = truncate!(deepcopy(tn), args...; kwargs...)
 
-struct MissingSchmidtCoefficientsException <: Base.Exception
-    message::String
-end
-
-Base.showerror(io::IO, e::MissingSchmidtCoefficientsException) = print(io, "MissingSchmidtCoefficientsException: $(e.message)")
-
 """
     truncate!(qtn::Chain, bond; threshold::Union{Nothing,Real} = nothing, maxdim::Union{Nothing,Int} = nothing)
 
@@ -213,7 +207,7 @@ function truncate!(qtn::Chain, bond; threshold::Union{Nothing,Real} = nothing, m
     end
 
     if vind ∉ inds(TensorNetwork(qtn), :hyper)
-        throw(MissingSchmidtCoefficientsException("Can't access the spectrum on bond $bond"))
+        throw(MissingSchmidtCoefficientsException(bond))
     end
 
     tensor = TensorNetwork(qtn)[vind]

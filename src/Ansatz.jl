@@ -47,3 +47,11 @@ function Tenet.select(tn::Ansatz, ::Val{:between}, site1::Site, site2::Site)
         tensor === tensor2
     end |> only
 end
+
+struct MissingSchmidtCoefficientsException <: Base.Exception
+    bond::NTuple{2,Site}
+end
+
+function Base.showerror(io::IO, e::MissingSchmidtCoefficientsException)
+    print(io, "Can't access the spectrum on bond $(e.bond)")
+end

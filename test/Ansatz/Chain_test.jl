@@ -59,14 +59,14 @@
         @test_throws ArgumentError truncate!(qtn, [Site(2), Site(3)])
 
         truncated = truncate(qtn, [Site(2), Site(3)]; maxdim = 1)
-        @test issetequal(size(select(truncated, :tensor, Site(2))), (2, 2, 1))
-        @test issetequal(size(select(truncated, :tensor, Site(3))), (1, 2, 2))
+        @test size(TensorNetwork(truncated), rightindex(truncated, Site(2))) == 1
+        @test size(TensorNetwork(truncated), leftindex(truncated, Site(3))) == 1
 
         # TODO: Uncomment when `select(:between)` is working
         # singular_values = select(qtn, :between, Site(2), Site(3))
         # truncated = truncate(qtn, [Site(2), Site(3)]; threshold = singular_values[2]+0.1)
-        # @test issetequal(size(select(truncated, :tensor, Site(2))), (2, 2, 1))
-        # @test issetequal(size(select(truncated, :tensor, Site(3))), (1, 2, 2))
+        # @test size(TensorNetwork(truncated), rightindex(truncated, Site(2))) == 1
+        # @test size(TensorNetwork(truncated), leftindex(truncated, Site(3))) == 1
     end
 
     @testset "Canonization" begin

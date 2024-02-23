@@ -55,7 +55,7 @@
         qtn = Chain(State(), Open(), [rand(2, 2), rand(2, 2, 2), rand(2, 2)])
         canonize_site!(qtn, Site(2); direction = :right, method = :svd)
 
-        @test_throws ArgumentError truncate!(qtn, [Site(1), Site(2)]; maxdim = 1)
+        @test_throws Qrochet.MissingSchmidtCoefficientsException truncate!(qtn, [Site(1), Site(2)]; maxdim = 1)
         @test_throws ArgumentError truncate!(qtn, [Site(2), Site(3)])
 
         truncated = truncate(qtn, [Site(2), Site(3)]; maxdim = 1)

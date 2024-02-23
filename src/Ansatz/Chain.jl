@@ -187,6 +187,8 @@ function canonize_site!(::Open, tn::Chain, site::Site; direction::Symbol, method
     return tn
 end
 
+truncate(tn::Chain, args...; kwargs...) = truncate!(deepcopy(tn), args...; kwargs...)
+
 """
     truncate!(qtn::Chain, bond; threshold::Union{Nothing,Real} = nothing, maxdim::Union{Nothing,Int} = nothing)
 

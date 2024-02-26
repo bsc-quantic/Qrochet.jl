@@ -69,6 +69,18 @@
         # @test size(TensorNetwork(truncated), leftindex(truncated, Site(3))) == 1
     end
 
+    @testset "rand" begin
+        using LinearAlgebra: norm
+
+        qtn = rand(Chain, Open, State; n = 5, p = 2, χ=20)
+        @test socket(qtn) == State()
+        @test ninputs(qtn) == 0
+        @test noutputs(qtn) == 5
+        @test issetequal(sites(qtn), [site"1", site"2", site"3", site"4", site"5"])
+        @test boundary(qtn) == Open()
+        @test isapprox(norm(qtn), 1.0)
+    end
+
     @testset "Canonization" begin
         using Tenet
 

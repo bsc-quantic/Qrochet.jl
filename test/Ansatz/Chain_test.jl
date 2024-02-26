@@ -83,7 +83,7 @@
             @test issetequal(sites(qtn), map(Site, 1:n))
             @test boundary(qtn) == Open()
             @test isapprox(norm(qtn), 1.0)
-            @test maximum(last, size(tn)) <= χ
+            @test maximum(last, size(TensorNetwork(qtn))) <= χ
         end
 
         @testset "Operator" begin
@@ -97,7 +97,7 @@
             @test issetequal(sites(qtn), vcat(map(Site, 1:n), map(adjoint ∘ Site, 1:n)))
             @test boundary(qtn) == Open()
             @test isapprox(norm(qtn), 1.0)
-            @test maximum(last, size(tn)) <= χ
+            @test maximum(last, size(TensorNetwork(qtn))) <= χ
         end
     end
 

@@ -148,17 +148,22 @@ end
 
 Base.adjoint(chain::Chain) = Chain(adjoint(Quantum(chain)), boundary(chain))
 
-struct ChainSampler{B<:Qrochet.Boundary, S<:Qrochet.Socket, NT<:NamedTuple} <: Random.Sampler{Chain}
+struct ChainSampler{B<:Qrochet.Boundary,S<:Qrochet.Socket,NT<:NamedTuple} <: Random.Sampler{Chain}
     parameters::NT
 
-    ChainSampler{B, S}(; kwargs...) where {B, S} = new{B, S,typeof(values(kwargs))}(values(kwargs))
+    ChainSampler{B,S}(; kwargs...) where {B,S} = new{B,S,typeof(values(kwargs))}(values(kwargs))
 end
 
 Base.rand(A::Type{<:Chain}, B::Type{<:Qrochet.Boundary}, S::Type{<:Qrochet.Socket}; kwargs...) =
     rand(Random.default_rng(), A, B, S; kwargs...)
 
-Base.rand(rng::AbstractRNG, ::Type{A}, ::Type{B}, ::Type{S}; kwargs...) where {A<:Chain, B<:Qrochet.Boundary, S<:Qrochet.Socket} =
-    rand(rng, ChainSampler{B, S}(; kwargs...), B, S)
+Base.rand(
+    rng::AbstractRNG,
+    ::Type{A},
+    ::Type{B},
+    ::Type{S};
+    kwargs...,
+) where {A<:Chain,B<:Qrochet.Boundary,S<:Qrochet.Socket} = rand(rng, ChainSampler{B,S}(; kwargs...), B, S)
 
 function Base.rand(rng::Random.AbstractRNG, sampler::ChainSampler, ::Type{Open}, ::Type{State})
     n = sampler.parameters.n

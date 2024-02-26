@@ -72,32 +72,33 @@
     @testset "rand" begin
         using LinearAlgebra: norm
 
-        chi = 10
-        qtn = rand(Chain, Open, State; n = 6, p = 2, χ = chi)
-        @test socket(qtn) == State()
-        @test ninputs(qtn) == 0
-        @test noutputs(qtn) == 6
-        @test issetequal(sites(qtn), [site"1", site"2", site"3", site"4", site"5", site"6"])
-        @test boundary(qtn) == Open()
-        @test isapprox(norm(qtn), 1.0)
+        @testset "State" begin
+            n = 8
+            χ = 10
 
-        inds_ = reduce(vcat, [inds(tensor) for tensor in tensors(qtn)])
-        unique_inds = filter(index -> count(x -> x == index, inds_) == 1, inds_)
-        @test !any(index -> size(TensorNetwork(qtn), index) > chi, unique_inds)
+            qtn = rand(Chain, Open, State; n, p = 2, χ)
+            @test socket(qtn) == State()
+            @test ninputs(qtn) == 0
+            @test noutputs(qtn) == n
+            @test issetequal(sites(qtn), map(Site, 1:n))
+            @test boundary(qtn) == Open()
+            @test isapprox(norm(qtn), 1.0)
+            @test maximum(last, size(tn)) <= χ
+        end
 
-        qtn = rand(Chain, Open, Operator; n = 6, p = 2, χ = chi)
-        @test socket(qtn) == Operator()
-        @test ninputs(qtn) == 6
-        @test noutputs(qtn) == 6
-        @test issetequal(sites(qtn),
-            [site"1", site"2", site"3", site"4", site"5", site"6",
-            site"1'", site"2'", site"3'", site"4'", site"5'", site"6'"])
-        @test boundary(qtn) == Open()
-        @test isapprox(norm(qtn), 1.0)
+        @testset "Operator" begin
+            n = 8
+            χ = 10
 
-        inds_ = reduce(vcat, [inds(tensor) for tensor in tensors(qtn)])
-        unique_inds = filter(index -> count(x -> x == index, inds_) == 1, inds_)
-        @test !any(index -> size(TensorNetwork(qtn), index) > chi, unique_inds)
+            qtn = rand(Chain, Open, Operator; n, p = 2, χ)
+            @test socket(qtn) == Operator()
+            @test ninputs(qtn) == n
+            @test noutputs(qtn) == n
+            @test issetequal(sites(qtn), vcat(map(Site, 1:n), map(adjoint ∘ Site, 1:n)))
+            @test boundary(qtn) == Open()
+            @test isapprox(norm(qtn), 1.0)
+            @test maximum(last, size(tn)) <= χ
+        end
     end
 
     @testset "Canonization" begin

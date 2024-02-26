@@ -69,6 +69,38 @@
         # @test size(TensorNetwork(truncated), leftindex(truncated, Site(3))) == 1
     end
 
+    @testset "rand" begin
+        using LinearAlgebra: norm
+
+        @testset "State" begin
+            n = 8
+            χ = 10
+
+            qtn = rand(Chain, Open, State; n, p = 2, χ)
+            @test socket(qtn) == State()
+            @test ninputs(qtn) == 0
+            @test noutputs(qtn) == n
+            @test issetequal(sites(qtn), map(Site, 1:n))
+            @test boundary(qtn) == Open()
+            @test isapprox(norm(qtn), 1.0)
+            @test maximum(last, size(TensorNetwork(qtn))) <= χ
+        end
+
+        @testset "Operator" begin
+            n = 8
+            χ = 10
+
+            qtn = rand(Chain, Open, Operator; n, p = 2, χ)
+            @test socket(qtn) == Operator()
+            @test ninputs(qtn) == n
+            @test noutputs(qtn) == n
+            @test issetequal(sites(qtn), vcat(map(Site, 1:n), map(adjoint ∘ Site, 1:n)))
+            @test boundary(qtn) == Open()
+            @test isapprox(norm(qtn), 1.0)
+            @test maximum(last, size(TensorNetwork(qtn))) <= χ
+        end
+    end
+
     @testset "Canonization" begin
         using Tenet
 

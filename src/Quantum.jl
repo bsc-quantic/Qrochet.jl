@@ -72,12 +72,12 @@ end
 # TODO (@mofeing) Return `copy`?
 Tenet.TensorNetwork(q::Quantum) = q.tn
 
-function Base.adjoint(q::Quantum)
-    sites = Iterators.map(q.sites) do (site, index)
+function Base.adjoint(qtn::Quantum)
+    sites = Iterators.map(qtn.sites) do (site, index)
         site' => index
     end |> Dict{Site,Symbol}
 
-    tn = conj(q.tn)
+    tn = conj(TensorNetwork(qtn))
 
     # rename inner indices
     physical_inds = values(sites)

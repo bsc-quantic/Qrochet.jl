@@ -76,7 +76,17 @@ function Base.adjoint(q::Quantum)
     sites = Iterators.map(q.sites) do (site, index)
         site' => index
     end |> Dict{Site,Symbol}
-    Quantum(conj(q.tn), sites)
+
+    tn = conj(q.tn)
+
+    # rename inner indices
+    physical_inds = values(sites)
+    virtual_inds = setdiff(inds(tn), physical_inds)
+    replace!(tn, map(virtual_inds) do i
+        i => Symbol(i, "'")
+    end...)
+
+    Quantum(tn, sites)
 end
 
 ninputs(q::Quantum) = count(isdual, keys(q.sites))

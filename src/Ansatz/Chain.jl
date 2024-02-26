@@ -146,30 +146,7 @@ function rightindex(::Union{Open,Periodic}, tn::Chain, site::Site)
     end
 end
 
-function Base.adjoint(chain::Chain)
-    chain = deepcopy(chain)
-    # TODO: Make this work for `Chain`s with singular values between sites
-    length(tensors(chain)) != length(sites(chain)) && throw(ArgumentError("Cannot adjoint a Chain with singular values"))
-    q = chain.super
-
-    # Update the virtual indices
-    for site in sites(chain)
-        left = leftindex(chain, site)
-        left !== nothing && replace!(q.tn, left => Symbol(string(left, "'")))
-    end
-    right = rightindex(chain, sites(chain)[end])
-    right !== nothing && replace!(q.tn, right => Symbol(string(right, "'")))
-
-    foreach(conj!, tensors(q.tn))
-    return chain
-end
-
-function LinearAlgebra.norm(ψ::Chain, p::Real = 2; kwargs...)
-    p != 2 && throw(ArgumentError("p=$p is not implemented yet"))
-
-    # TODO: Replace with contract(hcat(ψ, ψ')...) when implemented
-    return contract(merge(TensorNetwork(ψ), TensorNetwork(ψ')); kwargs...) |> only |> sqrt |> abs
-end
+Base.adjoint(chain::Chain) = Chain(adjoint(Quantum(chain)), boundary(chain))
 
 struct ChainSampler{B<:Qrochet.Boundary, S<:Qrochet.Socket, NT<:NamedTuple} <: Random.Sampler{Chain}
     parameters::NT

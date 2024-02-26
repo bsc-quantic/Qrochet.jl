@@ -1,6 +1,8 @@
 using Tenet
 using Tenet: letter
 using LinearAlgebra
+using Random
+using Muscle: gramschmidt!
 
 struct Chain <: Ansatz
     super::Quantum
@@ -142,6 +144,77 @@ function rightindex(::Union{Open,Periodic}, tn::Chain, site::Site)
     else
         (select(tn, :tensor, site) |> inds) ∩ (select(tn, :tensor, rightsite(tn, site)) |> inds) |> only
     end
+end
+
+"""
+    adjoint(tn::TensorNetwork{<:Quantum})
+
+Return the adjoint [`TensorNetwork`](@ref).
+
+# Implementation details
+
+The tensors are not transposed, just `conj!` is applied to them.
+"""
+function Base.adjoint(qtn::Chain)
+    qtn = deepcopy(qtn)
+
+    foreach(conj!, tensors(qtn))
+
+    return qtn
+end
+
+function LinearAlgebra.norm(ψ::Chain, p::Real = 2; kwargs...)
+    p != 2 && throw(ArgumentError("p=$p is not implemented yet"))
+
+    # TODO: Replace with hcat when implemented
+    return contract(tensors(TensorNetwork(ψ))..., tensors(TensorNetwork(ψ'))...; kwargs...) |> only |> sqrt |> abs
+end
+
+struct ChainSampler{B<:Qrochet.Boundary, S<:Qrochet.Socket, NT<:NamedTuple} <: Random.Sampler{Chain}
+    parameters::NT
+
+    ChainSampler{B, S}(; kwargs...) where {B, S} = new{B, S,typeof(values(kwargs))}(values(kwargs))
+end
+
+Base.rand(A::Type{<:Chain}, B::Type{<:Qrochet.Boundary}, S::Type{<:Qrochet.Socket}; kwargs...) =
+    rand(Random.default_rng(), A, B, S; kwargs...)
+
+Base.rand(rng::AbstractRNG, ::Type{A}, ::Type{B}, ::Type{S}; kwargs...) where {A<:Chain, B<:Qrochet.Boundary, S<:Qrochet.Socket} =
+    rand(rng, ChainSampler{B, S}(; kwargs...), B, S)
+
+function Base.rand(rng::Random.AbstractRNG, sampler::ChainSampler, ::Type{Open}, ::Type{State})
+    n = sampler.parameters.n
+    χ = sampler.parameters.χ
+    p = get(sampler.parameters, :p, 2)
+    T = get(sampler.parameters, :eltype, Float64)
+
+    arrays::Vector{AbstractArray{T,N} where {N}} = map(1:n) do i
+        χl, χr = let after_mid = i > n ÷ 2, i = (n + 1 - abs(2i - n - 1)) ÷ 2
+            χl = min(χ, p^(i - 1))
+            χr = min(χ, p^i)
+
+            # swap bond dims after mid and handle midpoint for odd-length MPS
+            (isodd(n) && i == n ÷ 2 + 1) ? (χl, χl) : (after_mid ? (χr, χl) : (χl, χr))
+        end
+
+        # fix for first site
+        i == 1 && ((χl, χr) = (χr, 1))
+
+        # orthogonalize by Gram-Schmidt algorithm
+        A = gramschmidt!(rand(rng, T, χl, χr * p))
+
+        A = reshape(A, χl, χr, p)
+        permutedims(A, (3, 1, 2))
+    end
+
+    # reshape boundary sites
+    arrays[1] = reshape(arrays[1], p, p)
+    arrays[n] = reshape(arrays[n], p, p)
+
+    # normalize state
+    arrays[1] ./= sqrt(p)
+
+    Chain(State(), Open(), arrays)
 end
 
 canonize_site(tn::Chain, args...; kwargs...) = canonize_site!(deepcopy(tn), args...; kwargs...)

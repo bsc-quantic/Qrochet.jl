@@ -146,28 +146,11 @@ function rightindex(::Union{Open,Periodic}, tn::Chain, site::Site)
     end
 end
 
-"""
-    adjoint(tn::TensorNetwork{<:Quantum})
-
-Return the adjoint [`TensorNetwork`](@ref).
-
-# Implementation details
-
-The tensors are not transposed, just `conj!` is applied to them.
-"""
-function Base.adjoint(qtn::Chain)
-    qtn = deepcopy(qtn)
-
-    foreach(conj!, tensors(qtn))
-
-    return qtn
-end
-
 function LinearAlgebra.norm(ψ::Chain, p::Real = 2; kwargs...)
     p != 2 && throw(ArgumentError("p=$p is not implemented yet"))
 
-    # TODO: Replace with hcat when implemented
-    return contract(tensors(TensorNetwork(ψ))..., tensors(TensorNetwork(ψ'))...; kwargs...) |> only |> sqrt |> abs
+    # TODO: Replace with contract(hcat(ψ, ψ')...) when implemented
+    return contract(contract(TensorNetwork(ψ)), contract(TensorNetwork(ψ')); kwargs...) |> only |> sqrt |> abs
 end
 
 struct ChainSampler{B<:Qrochet.Boundary, S<:Qrochet.Socket, NT<:NamedTuple} <: Random.Sampler{Chain}

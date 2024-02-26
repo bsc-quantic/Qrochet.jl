@@ -72,21 +72,32 @@
     @testset "rand" begin
         using LinearAlgebra: norm
 
-        qtn = rand(Chain, Open, State; n = 5, p = 2, χ = 20)
+        chi = 10
+        qtn = rand(Chain, Open, State; n = 6, p = 2, χ = chi)
         @test socket(qtn) == State()
         @test ninputs(qtn) == 0
-        @test noutputs(qtn) == 5
-        @test issetequal(sites(qtn), [site"1", site"2", site"3", site"4", site"5"])
+        @test noutputs(qtn) == 6
+        @test issetequal(sites(qtn), [site"1", site"2", site"3", site"4", site"5", site"6"])
         @test boundary(qtn) == Open()
         @test isapprox(norm(qtn), 1.0)
 
-        qtn = rand(Chain, Open, Operator; n = 5, p = 2, χ = 20)
+        inds_ = reduce(vcat, [inds(tensor) for tensor in tensors(mps)])
+        unique_inds = filter(index -> count(x -> x == index, inds_) == 1, inds_)
+        @test !any(index -> size(TensorNetwork(mps), index) > chi, unique_inds)
+
+        qtn = rand(Chain, Open, Operator; n = 6, p = 2, χ = chi)
         @test socket(qtn) == Operator()
-        @test ninputs(qtn) == 5
-        @test noutputs(qtn) == 5
-        @test issetequal(sites(qtn), [site"1", site"2", site"3", site"4", site"5", site"1'", site"2'", site"3'", site"4'", site"5'"])
+        @test ninputs(qtn) == 6
+        @test noutputs(qtn) == 6
+        @test issetequal(sites(qtn),
+            [site"1", site"2", site"3", site"4", site"5", site"6",
+            site"1'", site"2'", site"3'", site"4'", site"5'", site"6'"])
         @test boundary(qtn) == Open()
         @test isapprox(norm(qtn), 1.0)
+
+        inds_ = reduce(vcat, [inds(tensor) for tensor in tensors(mpo)])
+        unique_inds = filter(index -> count(x -> x == index, inds_) == 1, inds_)
+        @test !any(index -> size(TensorNetwork(mpo), index) > chi, unique_inds)
     end
 
     @testset "Canonization" begin

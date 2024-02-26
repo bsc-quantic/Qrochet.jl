@@ -81,9 +81,9 @@
         @test boundary(qtn) == Open()
         @test isapprox(norm(qtn), 1.0)
 
-        inds_ = reduce(vcat, [inds(tensor) for tensor in tensors(mps)])
+        inds_ = reduce(vcat, [inds(tensor) for tensor in tensors(qtn)])
         unique_inds = filter(index -> count(x -> x == index, inds_) == 1, inds_)
-        @test !any(index -> size(TensorNetwork(mps), index) > chi, unique_inds)
+        @test !any(index -> size(TensorNetwork(qtn), index) > chi, unique_inds)
 
         qtn = rand(Chain, Open, Operator; n = 6, p = 2, χ = chi)
         @test socket(qtn) == Operator()
@@ -95,9 +95,9 @@
         @test boundary(qtn) == Open()
         @test isapprox(norm(qtn), 1.0)
 
-        inds_ = reduce(vcat, [inds(tensor) for tensor in tensors(mpo)])
+        inds_ = reduce(vcat, [inds(tensor) for tensor in tensors(qtn)])
         unique_inds = filter(index -> count(x -> x == index, inds_) == 1, inds_)
-        @test !any(index -> size(TensorNetwork(mpo), index) > chi, unique_inds)
+        @test !any(index -> size(TensorNetwork(qtn), index) > chi, unique_inds)
     end
 
     @testset "Canonization" begin

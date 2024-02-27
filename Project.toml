@@ -17,6 +17,7 @@ Quac = "b9105292-1415-45cf-bff1-d6ccf71e6143"
 QrochetQuacExt = "Quac"
 
 [compat]
+Muscle = "0.1"
 Quac = "0.2"
 Tenet = "0.5"
 ValSplit = "0.1"

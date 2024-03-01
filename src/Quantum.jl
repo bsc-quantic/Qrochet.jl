@@ -92,6 +92,9 @@ end
 ninputs(q::Quantum) = count(isdual, keys(q.sites))
 noutputs(q::Quantum) = count(!isdual, keys(q.sites))
 
+inputs(q::Quantum) = filter(isdual, keys(q.sites))
+outputs(q::Quantum) = filter(!isdual, keys(q.sites))
+
 Base.summary(io::IO, q::Quantum) = print(io, "$(length(q.tn.tensormap))-tensors Quantum")
 Base.show(io::IO, q::Quantum) = print(io, "Quantum (inputs=$(ninputs(q)), outputs=$(noutputs(q)))")
 

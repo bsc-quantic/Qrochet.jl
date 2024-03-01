@@ -380,3 +380,38 @@ function mixed_canonize!(::Open, tn::Chain, center::Site) # TODO: center could b
 
     return tn
 end
+
+"""
+    evolve!(qtn::Chain, gate)
+
+Applies a local operator `gate` to the [`Chain`](@ref) tensor network.
+"""
+evolve!(qtn::Chain, gate::Dense) = evolve!(socket(qtn), qtn, gate)
+
+function evolve!(::State, qtn::Chain, gate::Dense)
+    @assert inputs(gate) ⊆ outputs(qtn)
+
+    # check gate sites are contiguous
+    # TODO check correctly for periodic boundary conditions
+    # TODO refactor this out?
+    if ninputs(gate) > 1
+        gate_inputs = sort!(map(x -> x.id, inputs(gate)))
+        range = UnitRange(extrema(gate_inputs)...)
+
+        range != gate_inputs && throw(ArgumentError("Gate lanes must be contiguous"))
+    end
+
+    # reindex gate to match the TN
+    pinds_mapping = map(inputs(gate)) do site
+        select(gate, :index, site) => select(qtn, :index, site)
+    end
+    gate = replace(gate, pinds_mapping)
+
+    # TODO contract virtual inds
+
+    # TODO contract physical inds
+
+    # TODO reindex TN to match previous physical inds?
+
+    return qtn
+end

@@ -8,6 +8,8 @@ function Qrochet.Dense(gate::Gate)
     Qrochet.Dense(arraytype(gate)(gate); sitemap = [Site.(lanes(gate))..., Site.(lanes(gate); dual = true)])
 end
 
+Qrochet.evolve!(qtn::Ansatz, gate::Gate) = evolve!(qtn, Qrochet.Dense(gate))
+
 function Qrochet.Quantum(circuit::Circuit)
     n = lanes(circuit)
     wire = [[Tenet.letter(i)] for i in 1:n]

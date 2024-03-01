@@ -2,7 +2,11 @@ module QrochetQuacExt
 
 using Qrochet
 using Tenet
-using Quac: Circuit, lanes, arraytype, Swap
+using Quac: Gate, Circuit, lanes, arraytype, Swap
+
+function Qrochet.Dense(gate::Gate)
+    Qrochet.Dense(arraytype(gate)(gate), [Site.(lanes(gate))..., Site.(lanes(gate); dual = true)])
+end
 
 function Qrochet.Quantum(circuit::Circuit)
     n = lanes(circuit)

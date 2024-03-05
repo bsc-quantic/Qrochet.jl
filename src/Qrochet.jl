@@ -14,14 +14,14 @@ export MatrixProduct
 include("Ansatz/Product.jl")
 export Product
 
+include("Ansatz/Dense.jl")
+export Dense
+
 include("Ansatz/Chain.jl")
 export Chain
 export MPS, pMPS, MPO, pMPO
 export leftindex, rightindex, isleftcanonical, isrightcanonical
 export canonize_site, canonize_site!, truncate!, mixed_canonize, mixed_canonize!
-
-include("Ansatz/Dense.jl")
-export Dense
 
 # reexports from Tenet
 using Tenet

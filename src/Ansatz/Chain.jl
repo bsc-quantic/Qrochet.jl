@@ -401,17 +401,24 @@ function evolve!(::State, qtn::Chain, gate::Dense)
         range != gate_inputs && throw(ArgumentError("Gate lanes must be contiguous"))
     end
 
+    # contract virtual index
+    vind = select(qtn, :between, sites(gate)...)
+    contract!(TensorNetwork(qtn), vind)
+
     # reindex gate to match the TN
     pinds_mapping = map(inputs(gate)) do site
         select(gate, :index, site) => select(qtn, :index, site)
     end
     gate = replace(gate, pinds_mapping)
 
-    # TODO contract virtual inds
-
     # TODO contract physical inds
+    merge!(TensorNetwork(qtn), TensorNetwork(gate))
+    contract!(TensorNetwork(qtn), [select(qtn, :index, site) for site in inputs(gate)])
 
-    # TODO reindex TN to match previous physical inds?
+    # reindex TN to match previous physical inds
+    replace!(TensorNetwork(qtn), map(outputs(gate)) do site
+        select(gate, :index, site) => select(qtn, :index, site)
+    end)
 
     return qtn
 end

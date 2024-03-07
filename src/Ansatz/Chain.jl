@@ -116,6 +116,17 @@ function Chain(::Operator, boundary::Open, arrays::Vector{<:AbstractArray})
     Chain(Quantum(TensorNetwork(_tensors), sitemap), boundary)
 end
 
+function Base.convert(::Type{Chain}, qtn::Product)
+    arrs::Vector{Array} = arrays(TensorNetwork(qtn))
+    arrs[1] = reshape(arrs[1], size(arrs[1])..., 1)
+    arrs[end] = reshape(arrs[end], size(arrs[end])..., 1)
+    map!(@view(arrs[2:end-1]), @view(arrs[2:end-1])) do arr
+        reshape(arr, size(arr)..., 1, 1)
+    end
+
+    Chain(socket(qtn), Open(), arrs)
+end
+
 leftsite(tn::Chain, site::Site) = leftsite(boundary(tn), tn, site)
 leftsite(::Open, tn::Chain, site::Site) = site.id ∈ range(2, nlanes(tn)) ? Site(site.id - 1) : nothing
 leftsite(::Periodic, tn::Chain, site::Site) = Site(mod1(site.id - 1, nlanes(tn)))

@@ -5,6 +5,7 @@
     @test noutputs(qtn) == 3
     @test issetequal(sites(qtn), [site"1", site"2", site"3"])
     @test boundary(qtn) == Periodic()
+    @test leftindex(qtn, site"1") == rightindex(qtn, site"3") != nothing
 
     qtn = Chain(State(), Open(), [rand(2, 2), rand(2, 2, 2), rand(2, 2)])
     @test socket(qtn) == State()
@@ -12,6 +13,7 @@
     @test noutputs(qtn) == 3
     @test issetequal(sites(qtn), [site"1", site"2", site"3"])
     @test boundary(qtn) == Open()
+    @test leftindex(qtn, site"1") == rightindex(qtn, site"3") == nothing
 
     qtn = Chain(Operator(), Periodic(), [rand(2, 2, 4, 4) for _ in 1:3])
     @test socket(qtn) == Operator()
@@ -19,6 +21,7 @@
     @test noutputs(qtn) == 3
     @test issetequal(sites(qtn), [site"1", site"2", site"3", site"1'", site"2'", site"3'"])
     @test boundary(qtn) == Periodic()
+    @test leftindex(qtn, site"1") == rightindex(qtn, site"3") != nothing
 
     qtn = Chain(Operator(), Open(), [rand(2, 2, 4), rand(2, 2, 4, 4), rand(2, 2, 4)])
     @test socket(qtn) == Operator()
@@ -26,6 +29,7 @@
     @test noutputs(qtn) == 3
     @test issetequal(sites(qtn), [site"1", site"2", site"3", site"1'", site"2'", site"3'"])
     @test boundary(qtn) == Open()
+    @test leftindex(qtn, site"1") == rightindex(qtn, site"3") == nothing
 
     @testset "Site" begin
         using Qrochet: leftsite, rightsite

@@ -6,10 +6,9 @@ export ninputs, noutputs, inputs, outputs, sites, nsites
 export Quantum
 
 include("Ansatz.jl")
+export Ansatz
 export socket, Scalar, State, Operator
 export boundary, Open, Periodic
-export Product
-export MatrixProduct
 
 include("Ansatz/Product.jl")
 export Product

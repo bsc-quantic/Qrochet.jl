@@ -9,6 +9,8 @@ struct Chain <: Ansatz
     boundary::Boundary
 end
 
+Base.copy(tn::Chain) = Chain(copy(Quantum(tn)), boundary(tn))
+
 boundary(tn::Chain) = tn.boundary
 
 MPS(arrays) = Chain(State(), Open(), arrays)
@@ -379,4 +381,107 @@ function mixed_canonize!(::Open, tn::Chain, center::Site) # TODO: center could b
     end
 
     return tn
+end
+
+"""
+    evolve!(qtn::Chain, gate)
+
+Applies a local operator `gate` to the [`Chain`](@ref) tensor network.
+"""
+function evolve!(qtn::Chain, gate::Dense; threshold = nothing, maxdim = nothing)
+    # check gate is a valid operator
+    if !(socket(gate) isa Operator)
+        throw(ArgumentError("Gate must be an operator, but got $(socket(gate))"))
+    end
+
+    # TODO refactor out to `islane`?
+    if !issetequal(adjoint.(inputs(gate)), outputs(gate))
+        throw(ArgumentError("Gate inputs ($(inputs(gate))) and outputs ($(outputs(gate))) must be the same"))
+    end
+
+    # TODO refactor out to `canconnect`?
+    if adjoint.(inputs(gate)) ⊈ outputs(qtn)
+        throw(ArgumentError("Gate inputs ($(inputs(gate))) must be a subset of the TN sites ($(sites(qtn)))"))
+    end
+
+    if nlanes(gate) == 1
+        evolve_1site!(qtn, gate)
+    elseif nlanes(gate) == 2
+        # check gate sites are contiguous
+        # TODO refactor this out?
+        gate_inputs = sort!(map(x -> x.id, inputs(gate)))
+        range = UnitRange(extrema(gate_inputs)...)
+
+        range != gate_inputs && throw(ArgumentError("Gate lanes must be contiguous"))
+
+        # TODO check correctly for periodic boundary conditions
+        evolve_2site!(qtn, gate; threshold, maxdim)
+    else
+        # TODO generalize for more than 2 lanes
+        throw(ArgumentError("Invalid number of lanes $(nlanes(gate)), maximum is 2"))
+    end
+
+    return qtn
+end
+
+function evolve_1site!(qtn::Chain, gate::Dense)
+    contracting_index = gensym(:tmp)
+    targetsite = only(inputs(gate))'
+
+    # reindex contracting index
+    replace!(TensorNetwork(qtn), select(qtn, :index, targetsite) => contracting_index)
+    replace!(TensorNetwork(gate), select(gate, :index, targetsite') => contracting_index)
+
+    # reindex output of gate to match TN sitemap
+    replace!(TensorNetwork(gate), select(gate, :index, only(outputs(gate))) => select(qtn, :index, targetsite))
+
+    # contract gate with TN
+    merge!(TensorNetwork(qtn), TensorNetwork(gate))
+    contract!(TensorNetwork(qtn), contracting_index)
+end
+
+function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim)
+    # shallow copy to avoid problems if errors in mid execution
+    qtn = copy(qtn)
+    gate = copy(gate)
+
+    bond = sitel, siter = minmax(outputs(gate)...)
+    left_inds::Vector{Symbol} = !isnothing(leftindex(qtn, sitel)) ? [leftindex(qtn, sitel)] : Symbol[]
+    right_inds::Vector{Symbol} = !isnothing(rightindex(qtn, siter)) ? [rightindex(qtn, siter)] : Symbol[]
+
+    # contract virtual index
+    virtualind::Symbol = select(qtn, :bond, bond...) |> only
+    contract!(TensorNetwork(qtn), virtualind)
+
+    # reindex contracting index
+    contracting_inds = [gensym(:tmp) for _ in inputs(gate)]
+    replace!(TensorNetwork(qtn), map(zip(inputs(gate), contracting_inds)) do (site, contracting_index)
+        select(qtn, :index, site') => contracting_index
+    end)
+    replace!(TensorNetwork(gate), map(zip(inputs(gate), contracting_inds)) do (site, contracting_index)
+        select(gate, :index, site) => contracting_index
+    end)
+
+    # reindex output of gate to match TN sitemap
+    for site in outputs(gate)
+        if select(qtn, :index, site) != select(gate, :index, site)
+            replace!(TensorNetwork(gate), select(gate, :index, site) => select(qtn, :index, site))
+        end
+    end
+
+    # contract physical inds
+    merge!(TensorNetwork(qtn), TensorNetwork(gate))
+    contract!(TensorNetwork(qtn), contracting_inds)
+
+    # decompose using SVD
+    push!(left_inds, select(qtn, :index, sitel))
+    push!(right_inds, select(qtn, :index, siter))
+    svd!(TensorNetwork(qtn); left_inds, right_inds, virtualind)
+
+    # truncate virtual index
+    if any(!isnothing, [threshold, maxdim])
+        truncate!(qtn, bond; threshold, maxdim)
+    end
+
+    return qtn
 end

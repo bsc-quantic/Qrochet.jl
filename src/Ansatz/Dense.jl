@@ -31,3 +31,5 @@ function Dense(::Operator, array::AbstractArray; sitemap::Vector{Site})
 
     Dense(qtn)
 end
+
+Base.copy(qtn::Dense) = Dense(copy(Quantum(qtn)))

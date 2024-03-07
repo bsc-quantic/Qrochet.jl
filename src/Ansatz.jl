@@ -16,7 +16,18 @@ abstract type Ansatz end
 Quantum(@nospecialize tn::Ansatz) = tn.super
 
 # TODO forward `Quantum` methods
-for f in [:(Tenet.TensorNetwork), :ninputs, :noutputs, :sites, :nsites, :socket, :(Tenet.tensors)]
+for f in [
+    :(Tenet.TensorNetwork),
+    :ninputs,
+    :noutputs,
+    :inputs,
+    :outputs,
+    :sites,
+    :nsites,
+    :nlanes,
+    :socket,
+    :(Tenet.tensors),
+]
     @eval $f(@nospecialize tn::Ansatz) = $f(Quantum(tn))
 end
 
@@ -42,11 +53,23 @@ function Tenet.select(tn::Ansatz, ::Val{:between}, site1::Site, site2::Site)
     tensor1 = select(Quantum(tn), :tensor, site1)
     tensor2 = select(Quantum(tn), :tensor, site2)
 
-    !isdisjoint(inds(tensor1), inds(tensor2)) && return nothing
+    isdisjoint(inds(tensor1), inds(tensor2)) && return nothing
 
-    Iterators.filter(Iterators.filter(==(2) ∘ ndims, neighbors(TensorNetwork(tn), tensor1))) do tensor
+    Iterators.filter(Iterators.filter(>=(2) ∘ ndims, neighbors(TensorNetwork(tn), tensor1))) do tensor
         tensor === tensor2
     end |> only
+end
+
+function Tenet.select(tn::Ansatz, ::Val{:bond}, site1::Site, site2::Site)
+    @assert site1 ∈ sites(tn) "Site $site1 not found"
+    @assert site2 ∈ sites(tn) "Site $site2 not found"
+    @assert site1 != site2 "Sites must be different"
+
+    tensor1 = select(Quantum(tn), :tensor, site1)
+    tensor2 = select(Quantum(tn), :tensor, site2)
+
+    isdisjoint(inds(tensor1), inds(tensor2)) && return nothing
+    return inds(tensor1) ∩ inds(tensor2)
 end
 
 struct MissingSchmidtCoefficientsException <: Base.Exception

@@ -2,7 +2,7 @@ module Qrochet
 
 include("Quantum.jl")
 export Site, @site_str, isdual
-export ninputs, noutputs, sites
+export ninputs, noutputs, inputs, outputs, sites, nsites
 export Quantum
 
 include("Ansatz.jl")
@@ -22,6 +22,8 @@ export Chain
 export MPS, pMPS, MPO, pMPO
 export leftindex, rightindex, isleftcanonical, isrightcanonical
 export canonize_site, canonize_site!, truncate!, mixed_canonize, mixed_canonize!
+
+export evolve!
 
 # reexports from Tenet
 using Tenet

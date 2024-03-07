@@ -21,6 +21,7 @@ end
 isdual(site::Site) = site.dual
 Base.show(io::IO, site::Site) = print(io, "$(site.id)$(site.dual ? "'" : "")")
 Base.adjoint(site::Site) = Site(site.id; dual = !site.dual)
+Base.isless(a::Site, b::Site) = a.id < b.id
 
 macro site_str(str)
     m = match(r"^(\d+)('?)$", str)
@@ -69,8 +70,9 @@ struct Quantum
     end
 end
 
-# TODO (@mofeing) Return `copy`?
 Tenet.TensorNetwork(q::Quantum) = q.tn
+
+Base.copy(q::Quantum) = Quantum(copy(TensorNetwork(q)), copy(q.sites))
 
 function Base.adjoint(qtn::Quantum)
     sites = Iterators.map(qtn.sites) do (site, index)
@@ -92,14 +94,18 @@ end
 ninputs(q::Quantum) = count(isdual, keys(q.sites))
 noutputs(q::Quantum) = count(!isdual, keys(q.sites))
 
-inputs(q::Quantum) = filter(isdual, keys(q.sites))
-outputs(q::Quantum) = filter(!isdual, keys(q.sites))
+inputs(q::Quantum) = sort!(filter(isdual, keys(q.sites)) |> collect)
+outputs(q::Quantum) = sort!(filter(!isdual, keys(q.sites)) |> collect)
 
 Base.summary(io::IO, q::Quantum) = print(io, "$(length(q.tn.tensormap))-tensors Quantum")
 Base.show(io::IO, q::Quantum) = print(io, "Quantum (inputs=$(ninputs(q)), outputs=$(noutputs(q)))")
 
 sites(tn::Quantum) = collect(keys(tn.sites))
 nsites(tn::Quantum) = length(tn.sites)
+lanes(tn::Quantum) = unique(Iterators.map(Iterators.flatten([inputs(tn), outputs(tn)])) do site
+    isdual(site) ? site' : site
+end)
+nlanes(tn::Quantum) = length(lanes(tn))
 
 Base.getindex(q::Quantum, site::Site) = q.sites[site]
 

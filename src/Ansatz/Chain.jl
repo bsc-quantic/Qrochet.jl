@@ -131,22 +131,12 @@ end
 rightsite(::Periodic, tn::Chain, site::Site) = Site(mod1(site.id + 1, length(sites(tn))))
 
 leftindex(tn::Chain, site::Site) = leftindex(boundary(tn), tn, site)
-function leftindex(::Union{Open,Periodic}, tn::Chain, site::Site)
-    if site == site"1"
-        nothing
-    else
-        (select(tn, :tensor, site) |> inds) ∩ (select(tn, :tensor, leftsite(tn, site)) |> inds) |> only
-    end
-end
+leftindex(::Periodic, tn::Chain, site::Site) = select(tn, :bond, site, leftsite(tn, site))
+leftindex(::Open, tn::Chain, site::Site) = site == site"1" ? nothing : leftindex(Periodic(), tn, site)
 
 rightindex(tn::Chain, site::Site) = rightindex(boundary(tn), tn, site)
-function rightindex(::Union{Open,Periodic}, tn::Chain, site::Site)
-    if site == Site(nsites(tn)) # TODO review
-        nothing
-    else
-        (select(tn, :tensor, site) |> inds) ∩ (select(tn, :tensor, rightsite(tn, site)) |> inds) |> only
-    end
-end
+rightindex(::Periodic, tn::Chain, site::Site) = select(tn, :bond, site, rightsite(tn, site))
+rightindex(::Open, tn::Chain, site::Site) = site == Site(nsites(tn)) ? nothing : rightindex(Periodic(), tn, site)
 
 Base.adjoint(chain::Chain) = Chain(adjoint(Quantum(chain)), boundary(chain))
 

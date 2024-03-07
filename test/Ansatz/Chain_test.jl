@@ -66,11 +66,10 @@
         @test size(TensorNetwork(truncated), rightindex(truncated, Site(2))) == 1
         @test size(TensorNetwork(truncated), leftindex(truncated, Site(3))) == 1
 
-        # TODO: Uncomment when `select(:between)` is working
-        # singular_values = select(qtn, :between, Site(2), Site(3))
-        # truncated = Qrochet.truncate(qtn, [Site(2), Site(3)]; threshold = singular_values[2]+0.1)
-        # @test size(TensorNetwork(truncated), rightindex(truncated, Site(2))) == 1
-        # @test size(TensorNetwork(truncated), leftindex(truncated, Site(3))) == 1
+        singular_values = select(qtn, :between, Site(2), Site(3))
+        truncated = Qrochet.truncate(qtn, [Site(2), Site(3)]; threshold = singular_values[2] + 0.1)
+        @test size(TensorNetwork(truncated), rightindex(truncated, Site(2))) == 1
+        @test size(TensorNetwork(truncated), leftindex(truncated, Site(3))) == 1
     end
 
     @testset "rand" begin

@@ -55,9 +55,7 @@ function Tenet.select(tn::Ansatz, ::Val{:between}, site1::Site, site2::Site)
 
     isdisjoint(inds(tensor1), inds(tensor2)) && return nothing
 
-    Iterators.filter(Iterators.filter(>=(2) ∘ ndims, neighbors(TensorNetwork(tn), tensor1))) do tensor
-        tensor === tensor2
-    end |> only
+    TensorNetwork(tn)[only(inds(tensor1) ∩ inds(tensor2))]
 end
 
 function Tenet.select(tn::Ansatz, ::Val{:bond}, site1::Site, site2::Site)

@@ -8,6 +8,10 @@
     @test ninputs(qtn) == 0
     @test noutputs(qtn) == 3
     @test norm(qtn) isa Number
+    @test begin
+        normalize!(qtn)
+        norm(qtn) ≈ 1
+    end
 
     # conversion to `Quantum`
     @test Quantum(qtn) isa Quantum
@@ -18,4 +22,8 @@
     @test noutputs(qtn) == 3
     @test norm(qtn) isa Number
     @test opnorm(qtn) isa Number
+    @test begin
+        normalize!(qtn)
+        norm(qtn) ≈ 1
+    end
 end

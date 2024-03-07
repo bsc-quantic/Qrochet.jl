@@ -45,8 +45,8 @@
 
         qtn = Chain(State(), Open(), [rand(2, 2), rand(2, 2, 2), rand(2, 2)])
 
-        @test_throws ArgumentError leftsite(qtn, Site(1))
-        @test_throws ArgumentError rightsite(qtn, Site(3))
+        @test leftsite(qtn, Site(1)) |> isnothing
+        @test rightsite(qtn, Site(3)) |> isnothing
 
         @test leftsite(qtn, Site(2)) == Site(1)
         @test leftsite(qtn, Site(3)) == Site(2)

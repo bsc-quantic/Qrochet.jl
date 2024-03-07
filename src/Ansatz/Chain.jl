@@ -117,26 +117,20 @@ function Chain(::Operator, boundary::Open, arrays::Vector{<:AbstractArray})
 end
 
 leftsite(tn::Chain, site::Site) = leftsite(boundary(tn), tn, site)
-function leftsite(::Open, tn::Chain, site::Site)
-    site.id ∉ range(2, length(sites(tn))) && throw(ArgumentError("Invalid site $site"))
-    Site(site.id - 1)
-end
-leftsite(::Periodic, tn::Chain, site::Site) = Site(mod1(site.id - 1, length(sites(tn))))
+leftsite(::Open, tn::Chain, site::Site) = site.id ∈ range(2, nlanes(tn)) ? Site(site.id - 1) : nothing
+leftsite(::Periodic, tn::Chain, site::Site) = Site(mod1(site.id - 1, nlanes(tn)))
 
 rightsite(tn::Chain, site::Site) = rightsite(boundary(tn), tn, site)
-function rightsite(::Open, tn::Chain, site::Site)
-    site.id ∉ range(1, length(sites(tn)) - 1) && throw(ArgumentError("Invalid site $site"))
-    Site(site.id + 1)
-end
-rightsite(::Periodic, tn::Chain, site::Site) = Site(mod1(site.id + 1, length(sites(tn))))
+rightsite(::Open, tn::Chain, site::Site) = site.id ∈ range(1, nlanes(tn) - 1) ? Site(site.id + 1) : nothing
+rightsite(::Periodic, tn::Chain, site::Site) = Site(mod1(site.id + 1, nlanes(tn)))
 
 leftindex(tn::Chain, site::Site) = leftindex(boundary(tn), tn, site)
-leftindex(::Periodic, tn::Chain, site::Site) = select(tn, :bond, site, leftsite(tn, site))
 leftindex(::Open, tn::Chain, site::Site) = site == site"1" ? nothing : leftindex(Periodic(), tn, site)
+leftindex(::Periodic, tn::Chain, site::Site) = select(tn, :bond, site, leftsite(tn, site)) |> only
 
 rightindex(tn::Chain, site::Site) = rightindex(boundary(tn), tn, site)
-rightindex(::Periodic, tn::Chain, site::Site) = select(tn, :bond, site, rightsite(tn, site))
-rightindex(::Open, tn::Chain, site::Site) = site == Site(nsites(tn)) ? nothing : rightindex(Periodic(), tn, site)
+rightindex(::Open, tn::Chain, site::Site) = site == Site(nlanes(tn)) ? nothing : rightindex(Periodic(), tn, site)
+rightindex(::Periodic, tn::Chain, site::Site) = select(tn, :bond, site, rightsite(tn, site)) |> only
 
 Base.adjoint(chain::Chain) = Chain(adjoint(Quantum(chain)), boundary(chain))
 

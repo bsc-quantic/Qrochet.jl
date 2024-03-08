@@ -1,5 +1,7 @@
 module Qrochet
 
+include("Utils.jl")
+
 include("Quantum.jl")
 export Site, @site_str, isdual
 export ninputs, noutputs, inputs, outputs, sites, nsites

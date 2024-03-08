@@ -12,10 +12,9 @@ Qrochet.evolve!(qtn::Ansatz, gate::Gate) = evolve!(qtn, Qrochet.Dense(gate))
 
 function Qrochet.Quantum(circuit::Circuit)
     n = lanes(circuit)
-    wire = [[Tenet.letter(i)] for i in 1:n]
+    wire = [[Qrochet.nextindex()] for _ in 1:n]
     tensors = Tensor[]
 
-    i = n + 1
     for gate in circuit
         G = arraytype(gate)
         array = G(gate)
@@ -27,8 +26,7 @@ function Qrochet.Quantum(circuit::Circuit)
         end
 
         inds = map(lanes(gate)) do l
-            from, to = last(wire[l]), Tenet.letter(i)
-            i += 1
+            from, to = last(wire[l]), Qrochet.nextindex()
             push!(wire[l], to)
             (from, to)
         end |> x -> zip(x...) |> Iterators.flatten |> collect

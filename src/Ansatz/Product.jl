@@ -1,5 +1,4 @@
 using Tenet
-using Tenet: letter
 using LinearAlgebra
 
 struct Product <: Ansatz
@@ -12,22 +11,24 @@ struct Product <: Ansatz
 end
 
 function Product(arrays::Vector{<:Vector})
+    symbols = [nextindex() for _ in 1:length(arrays)]
     _tensors = map(enumerate(arrays)) do (i, array)
-        Tensor(array, [letter(i)])
+        Tensor(array, [symbols[i]])
     end
 
-    sitemap = Dict(Site(i) => letter(i) for i in 1:length(arrays))
+    sitemap = Dict(Site(i) => symbols[i] for i in 1:length(arrays))
 
     Product(TensorNetwork(_tensors), sitemap)
 end
 
 function Product(arrays::Vector{<:Matrix})
     n = length(arrays)
+    symbols = [nextindex() for _ in 1:2*length(arrays)]
     _tensors = map(enumerate(arrays)) do (i, array)
-        Tensor(array, [letter(i + n), letter(i)])
+        Tensor(array, [symbols[i+n], symbols[i]])
     end
 
-    sitemap = merge!(Dict(Site(i, dual = true) => letter(i) for i in 1:n), Dict(Site(i) => letter(i + n) for i in 1:n))
+    sitemap = merge!(Dict(Site(i, dual = true) => symbols[i] for i in 1:n), Dict(Site(i) => symbols[i+n] for i in 1:n))
 
     Product(TensorNetwork(_tensors), sitemap)
 end

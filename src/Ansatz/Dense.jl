@@ -6,11 +6,12 @@ function Dense(::State, array::AbstractArray)
     @assert ndims(array) > 0
     @assert all(>(1), size(array))
 
+    symbols = [nextindex() for _ in 1:ndims(array)]
     sitemap = map(1:ndims(array)) do i
-        Site(i) => letter(i)
+        Site(i) => symbols[i]
     end |> Dict{Int,Symbol}
 
-    tensor = Tensor(array, [letter(i) for i in 1:ndims(array)])
+    tensor = Tensor(array, symbols)
 
     tn = TensorNetwork([tensor])
     qtn = Quantum(tn, sitemap)
@@ -22,7 +23,7 @@ function Dense(::Operator, array::AbstractArray; sitemap::Vector{Site})
     @assert all(>(1), size(array))
     @assert length(sitemap) == ndims(array)
 
-    tensor_inds = [letter(i) for i in 1:ndims(array)]
+    tensor_inds = [nextindex() for _ in 1:ndims(array)]
     tensor = Tensor(array, tensor_inds)
     tn = TensorNetwork([tensor])
 

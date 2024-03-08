@@ -426,7 +426,6 @@ end
 
 function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim)
     # shallow copy to avoid problems if errors in mid execution
-    qtn = copy(qtn)
     gate = copy(gate)
 
     bond = sitel, siter = minmax(outputs(gate)...)

@@ -150,7 +150,7 @@
         @testset "canonize" begin
             using Qrochet: isleftcanonical, isrightcanonical
 
-            qtn = Chain(State(), Open(), [rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
+            qtn = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
             canonized = canonize(qtn)
 
             @test length(tensors(canonized)) == 9 # 5 tensors + 4 singular values vectors
@@ -158,6 +158,11 @@
                 contract(transform(TensorNetwork(canonized), Tenet.HyperindConverter())),
                 contract(TensorNetwork(qtn)),
             )
+            @test isapprox(norm(qtn), norm(canonized))
+
+            # Extract the singular values between each adjacent pair of sites in the canonized chain
+            Λ = [select(canonized, :between, Site(i), Site(i + 1)) for i in 1:4]
+            @test map(λ -> sum(abs2, λ), Λ) ≈ ones(length(Λ)) * norm(canonized)^2
 
             for i in 1:4
                 canonized = canonize(qtn)

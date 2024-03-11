@@ -166,8 +166,8 @@
                     @test isleftcanonical(canonized, Site(i))
                 else
                     Γᵢ = select(canonized, :tensor, Site(i))
-                    Λᵢ = pop!(TensorNetwork(canonized), select(canonized, :between, Site(i-1), Site(i)))
-                    replace!(TensorNetwork(canonized), Γᵢ => contract(Λᵢ, Γᵢ; dims=()))
+                    Λᵢ = pop!(TensorNetwork(canonized), select(canonized, :between, Site(i - 1), Site(i)))
+                    replace!(TensorNetwork(canonized), Γᵢ => contract(Λᵢ, Γᵢ; dims = ()))
                     @test isleftcanonical(canonized, Site(i))
                 end
             end
@@ -179,9 +179,9 @@
                     @test isrightcanonical(canonized, Site(i))
                 else
                     Γᵢ = select(canonized, :tensor, Site(i))
-                    Λᵢ₊₁ = pop!(TensorNetwork(canonized), select(canonized, :between, Site(i), Site(i+1)))
-                    replace!(TensorNetwork(canonized), Γᵢ => contract(Γᵢ, Λᵢ₊₁; dims=()))
-                    @test  isrightcanonical(canonized, Site(i))
+                    Λᵢ₊₁ = pop!(TensorNetwork(canonized), select(canonized, :between, Site(i), Site(i + 1)))
+                    replace!(TensorNetwork(canonized), Γᵢ => contract(Γᵢ, Λᵢ₊₁; dims = ()))
+                    @test isrightcanonical(canonized, Site(i))
                 end
             end
         end

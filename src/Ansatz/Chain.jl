@@ -365,9 +365,9 @@ function canonize!(::Open, tn::Chain)
         canonize_site!(tn, Site(i); direction = :left, method = :svd)
 
         # extract the singular values and contract them with the next tensor
-        Λᵢ₋₁ = pop!(TensorNetwork(tn), select(tn, :between, Site(i-1), Site(i)))
-        Bᵢ₋₁ = select(tn, :tensor, Site(i-1))
-        replace!(TensorNetwork(tn), Bᵢ₋₁ => contract(Bᵢ₋₁, Λᵢ₋₁, dims=()))
+        Λᵢ₋₁ = pop!(TensorNetwork(tn), select(tn, :between, Site(i - 1), Site(i)))
+        Bᵢ₋₁ = select(tn, :tensor, Site(i - 1))
+        replace!(TensorNetwork(tn), Bᵢ₋₁ => contract(Bᵢ₋₁, Λᵢ₋₁, dims = ()))
         push!(S_vals, Λᵢ₋₁)
     end
     reverse!(S_vals) # reverse the singular values to match the order of the tensors
@@ -380,7 +380,7 @@ function canonize!(::Open, tn::Chain)
     for i in 2:nsites(tn) # the tensors at i is in "A" form, we need to contract (Λᵢ)⁻¹ with A to get Γᵢ
         Λᵢ = S_vals[i-1] # singular values start between site 1 and 2
         A = select(tn, :tensor, Site(i))
-        Γᵢ = contract(A, Tensor(1 ./ parent(Λᵢ), inds(Λᵢ)), dims=())
+        Γᵢ = contract(A, Tensor(1 ./ parent(Λᵢ), inds(Λᵢ)), dims = ())
         replace!(TensorNetwork(tn), A => Γᵢ)
         push!(TensorNetwork(tn), Λᵢ)
     end

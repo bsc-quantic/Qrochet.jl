@@ -353,32 +353,26 @@ Transform a `Chain` tensor network into the canonical form (Vidal form), that is
 we have the singular values matrix Λᵢ between each tensor Γᵢ₋₁ and Γᵢ.
 """
 function canonize!(::Open, tn::Chain)
-    S_vals = Tensor[]
+    Λ = Tensor[]
 
-    # left-to-right QR sweep, get left-canonical tensors
-    for i in 1:nsites(tn)-1
-        canonize_site!(tn, Site(i); direction = :right, method = :qr)
+    # right-to-left QR sweep, get right-canonical tensors
+    for i in nsites(tn):-1:2
+        canonize_site!(tn, Site(i); direction = :left, method = :qr)
     end
 
-    # right-to-left SVD sweep, get right-canonical tensors
-    for i in nsites(tn):-1:2
-        canonize_site!(tn, Site(i); direction = :left, method = :svd)
+    # left-to-right SVD sweep, get left-canonical tensors and singular values without reversing
+    for i in 1:nsites(tn)-1
+        canonize_site!(tn, Site(i); direction = :right, method = :svd)
 
         # extract the singular values and contract them with the next tensor
-        Λᵢ₋₁ = pop!(TensorNetwork(tn), select(tn, :between, Site(i - 1), Site(i)))
-        Bᵢ₋₁ = select(tn, :tensor, Site(i - 1))
-        replace!(TensorNetwork(tn), Bᵢ₋₁ => contract(Bᵢ₋₁, Λᵢ₋₁, dims = ()))
-        push!(S_vals, Λᵢ₋₁)
-    end
-    reverse!(S_vals) # reverse the singular values to match the order of the tensors
-
-    # left-to-right QR sweep, get left-canonical tensors
-    for i in 1:nsites(tn)-1
-        canonize_site!(tn, Site(i); direction = :right, method = :qr)
+        Λᵢ = pop!(TensorNetwork(tn), select(tn, :between, Site(i), Site(i + 1)))
+        Aᵢ₊₁ = select(tn, :tensor, Site(i + 1))
+        replace!(TensorNetwork(tn), Aᵢ₊₁ => contract(Aᵢ₊₁, Λᵢ, dims = ()))
+        push!(Λ, Λᵢ)
     end
 
-    for i in 2:nsites(tn) # the tensors at i is in "A" form, we need to contract (Λᵢ)⁻¹ with A to get Γᵢ
-        Λᵢ = S_vals[i-1] # singular values start between site 1 and 2
+    for i in 2:nsites(tn) # tensors at i in "A" form, need to contract (Λᵢ)⁻¹ with A to get Γᵢ
+        Λᵢ = Λ[i-1] # singular values start between site 1 and 2
         A = select(tn, :tensor, Site(i))
         Γᵢ = contract(A, Tensor(1 ./ parent(Λᵢ), inds(Λᵢ)), dims = ())
         replace!(TensorNetwork(tn), A => Γᵢ)

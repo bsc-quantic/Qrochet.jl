@@ -355,6 +355,11 @@ we have the singular values matrix Λᵢ between each tensor Γᵢ₋₁ and Γ�
 function canonize!(::Open, tn::Chain)
     S_vals = Tensor[]
 
+    # left-to-right QR sweep, get left-canonical tensors
+    for i in 1:nsites(tn)-1
+        canonize_site!(tn, Site(i); direction = :right, method = :qr)
+    end
+
     # right-to-left SVD sweep, get right-canonical tensors
     for i in nsites(tn):-1:2
         canonize_site!(tn, Site(i); direction = :left, method = :svd)

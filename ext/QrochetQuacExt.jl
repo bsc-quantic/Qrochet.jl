@@ -5,7 +5,11 @@ using Tenet
 using Quac: Gate, Circuit, lanes, arraytype, Swap
 
 function Qrochet.Dense(gate::Gate)
-    Qrochet.Dense(arraytype(gate)(gate); sitemap = [Site.(lanes(gate))..., Site.(lanes(gate); dual = true)])
+    Qrochet.Dense(
+        Operator(),
+        arraytype(gate)(gate);
+        sites = Site[Site.(lanes(gate))..., Site.(lanes(gate); dual = true)...],
+    )
 end
 
 Qrochet.evolve!(qtn::Ansatz, gate::Gate) = evolve!(qtn, Qrochet.Dense(gate))

@@ -413,9 +413,9 @@ Normalizes the input [`Chain`](@ref) tensor network by transforming it
 to a mixed-canonized form.
 """
 function normalize_by_mixed_canonization(tn::Chain)
-    centersite = ((Quantum(tn) |> nsites) + 1) ÷ 2
-    canonized = mixed_canonize(tn, Site(centersite))
-    normalize!(select(Quantum(canonized), :tensor, Site(centersite)))
+    centersite = Site(((Quantum(tn) |> nsites) + 1) ÷ 2)
+    canonized = mixed_canonize(tn, centersite)
+    normalize!(select(Quantum(canonized), :tensor, centersite))
 
     return canonized
 end

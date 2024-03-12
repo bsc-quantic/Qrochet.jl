@@ -2,14 +2,14 @@ struct Dense <: Ansatz
     super::Quantum
 end
 
-function Dense(::State, array::AbstractArray)
+function Dense(::State, array::AbstractArray; sites::Vector{Site} = Site.(1:ndims(array)))
     @assert ndims(array) > 0
     @assert all(>(1), size(array))
 
     symbols = [nextindex() for _ in 1:ndims(array)]
-    sitemap = map(1:ndims(array)) do i
-        Site(i) => symbols[i]
-    end |> Dict{Int,Symbol}
+    sitemap = map(sites, 1:ndims(array)) do site, i
+        site => symbols[i]
+    end |> Dict{Site,Symbol}
 
     tensor = Tensor(array, symbols)
 
@@ -18,16 +18,16 @@ function Dense(::State, array::AbstractArray)
     Dense(qtn)
 end
 
-function Dense(::Operator, array::AbstractArray; sitemap::Vector{Site})
+function Dense(::Operator, array::AbstractArray; sites::Vector{Site})
     @assert ndims(array) > 0
     @assert all(>(1), size(array))
-    @assert length(sitemap) == ndims(array)
+    @assert length(sites) == ndims(array)
 
     tensor_inds = [nextindex() for _ in 1:ndims(array)]
     tensor = Tensor(array, tensor_inds)
     tn = TensorNetwork([tensor])
 
-    sitemap = map(splat(Pair), zip(sitemap, tensor_inds)) |> Dict{Site,Symbol}
+    sitemap = map(splat(Pair), zip(sites, tensor_inds)) |> Dict{Site,Symbol}
     qtn = Quantum(tn, sitemap)
 
     Dense(qtn)

@@ -24,6 +24,7 @@ export MPS, pMPS, MPO, pMPO
 export leftindex, rightindex, isleftcanonical, isrightcanonical
 export canonize_site, canonize_site!, truncate!
 export canonize, canonize!, mixed_canonize, mixed_canonize!
+export observe
 
 export evolve!
 

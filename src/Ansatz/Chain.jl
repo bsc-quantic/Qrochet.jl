@@ -343,8 +343,8 @@ function isrightcanonical(qtn::Chain, site; atol::Real = 1e-12)
     return isapprox(contracted, identity_matrix; atol)
 end
 
-canonize(tn::Chain, args...; kwargs...) = canonize!(deepcopy(tn), args...; kwargs...)
-canonize!(tn::Chain, args...; kwargs...) = canonize!(boundary(tn), tn, args...; kwargs...)
+canonize(tn::Chain, args...; kwargs...) = canonize!(copy(tn), args...; kwargs...)
+canonize!(tn::Chain, args...; kwargs...) = canonize!(copy(tn), tn, args...; kwargs...)
 
 """
 canonize(boundary::Boundary, tn::Chain)

@@ -407,6 +407,20 @@ function mixed_canonize!(::Open, tn::Chain, center::Site) # TODO: center could b
 end
 
 """
+    normalize_by_mixed_canonization(tn::Chain)
+
+Normalizes the input [`Chain`](@ref) tensor network by transforming it
+to a mixed-canonized form.
+"""
+function normalize_by_mixed_canonization(tn::Chain)
+    centersite = ((Quantum(tn) |> nsites) + 1) ÷ 2
+    canonized = mixed_canonize(tn, Site(centersite))
+    normalize!(select(Quantum(canonized), :tensor, Site(centersite)))
+
+    return canonized
+end
+
+"""
     evolve!(qtn::Chain, gate)
 
 Applies a local operator `gate` to the [`Chain`](@ref) tensor network.

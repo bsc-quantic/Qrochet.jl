@@ -344,7 +344,7 @@ function isrightcanonical(qtn::Chain, site; atol::Real = 1e-12)
 end
 
 canonize(tn::Chain, args...; kwargs...) = canonize!(copy(tn), args...; kwargs...)
-canonize!(tn::Chain, args...; kwargs...) = canonize!(copy(tn), tn, args...; kwargs...)
+canonize!(tn::Chain, args...; kwargs...) = canonize!(boundary(tn), tn, args...; kwargs...)
 
 """
 canonize(boundary::Boundary, tn::Chain)
@@ -374,7 +374,7 @@ function canonize!(::Open, tn::Chain)
     for i in 2:nsites(tn) # tensors at i in "A" form, need to contract (Λᵢ)⁻¹ with A to get Γᵢ
         Λᵢ = Λ[i-1] # singular values start between site 1 and 2
         A = select(tn, :tensor, Site(i))
-        Γᵢ = contract(A, Tensor(1 ./ parent(Λᵢ), inds(Λᵢ)), dims = ())
+        Γᵢ = contract(A, Tensor(pinv.(parent(Λᵢ)), inds(Λᵢ)), dims = ())
         replace!(TensorNetwork(tn), A => Γᵢ)
         push!(TensorNetwork(tn), Λᵢ)
     end

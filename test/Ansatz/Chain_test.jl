@@ -147,6 +147,50 @@
             @test length(tensors(canonize_site(qtn, Site(2); direction = :left, method = :svd))) == 4
         end
 
+        @testset "canonize" begin
+            using Qrochet: isleftcanonical, isrightcanonical
+
+            qtn = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
+            canonized = canonize(qtn)
+
+            @test length(tensors(canonized)) == 9 # 5 tensors + 4 singular values vectors
+            @test isapprox(
+                contract(transform(TensorNetwork(canonized), Tenet.HyperindConverter())),
+                contract(TensorNetwork(qtn)),
+            )
+            @test isapprox(norm(qtn), norm(canonized))
+
+            # Extract the singular values between each adjacent pair of sites in the canonized chain
+            Λ = [select(canonized, :between, Site(i), Site(i + 1)) for i in 1:4]
+            @test map(λ -> sum(abs2, λ), Λ) ≈ ones(length(Λ)) * norm(canonized)^2
+
+            for i in 1:4
+                canonized = canonize(qtn)
+
+                if i == 1
+                    @test isleftcanonical(canonized, Site(i))
+                else
+                    Γᵢ = select(canonized, :tensor, Site(i))
+                    Λᵢ = pop!(TensorNetwork(canonized), select(canonized, :between, Site(i - 1), Site(i)))
+                    replace!(TensorNetwork(canonized), Γᵢ => contract(Λᵢ, Γᵢ; dims = ()))
+                    @test isleftcanonical(canonized, Site(i))
+                end
+            end
+
+            for i in 2:5
+                canonized = canonize(qtn)
+
+                if i == 5
+                    @test isrightcanonical(canonized, Site(i))
+                else
+                    Γᵢ = select(canonized, :tensor, Site(i))
+                    Λᵢ₊₁ = pop!(TensorNetwork(canonized), select(canonized, :between, Site(i), Site(i + 1)))
+                    replace!(TensorNetwork(canonized), Γᵢ => contract(Γᵢ, Λᵢ₊₁; dims = ()))
+                    @test isrightcanonical(canonized, Site(i))
+                end
+            end
+        end
+
         @testset "mixed_canonize" begin
             qtn = Chain(State(), Open(), [rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
             canonized = mixed_canonize(qtn, Site(3))

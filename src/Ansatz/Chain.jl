@@ -343,6 +343,45 @@ function isrightcanonical(qtn::Chain, site; atol::Real = 1e-12)
     return isapprox(contracted, identity_matrix; atol)
 end
 
+canonize(tn::Chain, args...; kwargs...) = canonize!(copy(tn), args...; kwargs...)
+canonize!(tn::Chain, args...; kwargs...) = canonize!(boundary(tn), tn, args...; kwargs...)
+
+"""
+canonize(boundary::Boundary, tn::Chain)
+
+Transform a `Chain` tensor network into the canonical form (Vidal form), that is,
+we have the singular values matrix Λᵢ between each tensor Γᵢ₋₁ and Γᵢ.
+"""
+function canonize!(::Open, tn::Chain)
+    Λ = Tensor[]
+
+    # right-to-left QR sweep, get right-canonical tensors
+    for i in nsites(tn):-1:2
+        canonize_site!(tn, Site(i); direction = :left, method = :qr)
+    end
+
+    # left-to-right SVD sweep, get left-canonical tensors and singular values without reversing
+    for i in 1:nsites(tn)-1
+        canonize_site!(tn, Site(i); direction = :right, method = :svd)
+
+        # extract the singular values and contract them with the next tensor
+        Λᵢ = pop!(TensorNetwork(tn), select(tn, :between, Site(i), Site(i + 1)))
+        Aᵢ₊₁ = select(tn, :tensor, Site(i + 1))
+        replace!(TensorNetwork(tn), Aᵢ₊₁ => contract(Aᵢ₊₁, Λᵢ, dims = ()))
+        push!(Λ, Λᵢ)
+    end
+
+    for i in 2:nsites(tn) # tensors at i in "A" form, need to contract (Λᵢ)⁻¹ with A to get Γᵢ
+        Λᵢ = Λ[i-1] # singular values start between site 1 and 2
+        A = select(tn, :tensor, Site(i))
+        Γᵢ = contract(A, Tensor(pinv.(parent(Λᵢ)), inds(Λᵢ)), dims = ())
+        replace!(TensorNetwork(tn), A => Γᵢ)
+        push!(TensorNetwork(tn), Λᵢ)
+    end
+
+    return tn
+end
+
 mixed_canonize(tn::Chain, args...; kwargs...) = mixed_canonize!(deepcopy(tn), args...; kwargs...)
 mixed_canonize!(tn::Chain, args...; kwargs...) = mixed_canonize!(boundary(tn), tn, args...; kwargs...)
 

@@ -448,6 +448,9 @@ function evolve!(qtn::Chain, gate::Dense; threshold = nothing, maxdim = nothing)
 end
 
 function evolve_1site!(qtn::Chain, gate::Dense)
+    # shallow copy to avoid problems if errors in mid execution
+    gate = copy(gate)
+
     contracting_index = gensym(:tmp)
     targetsite = only(inputs(gate))'
 

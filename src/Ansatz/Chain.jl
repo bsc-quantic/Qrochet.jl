@@ -462,6 +462,9 @@ function evolve!(qtn::Chain, gate::Dense; threshold = nothing, maxdim = nothing)
 end
 
 function evolve_1site!(qtn::Chain, gate::Dense)
+    # shallow copy to avoid problems if errors in mid execution
+    gate = copy(gate)
+
     contracting_index = gensym(:tmp)
     targetsite = only(inputs(gate))'
 
@@ -520,4 +523,17 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim)
     end
 
     return qtn
+end
+
+function observe(ψ::Chain, observables)
+    # contract observable with TN
+    ϕ = copy(ψ)
+    for observable in observables
+        evolve!(ϕ, observable)
+    end
+
+    # contract evolved TN with adjoint of original TN
+    tn = merge!(TensorNetwork(ϕ), TensorNetwork(ψ'))
+
+    return contract(tn)
 end

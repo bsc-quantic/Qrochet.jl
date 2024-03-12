@@ -208,5 +208,18 @@
         end
     end
 
+    @testset "Normalization" begin
+        @testset "normalize_by_mixed_canonization" begin
+            odd_qtn = Chain(State(), Open(), [rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
+            even_qtn = Chain(State(), Open(), [rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
+            qtns = [odd_qtn, even_qtn]
+            for qtn in qtns
+                norm_canonized = normalize_by_mixed_canonization(qtn)
+                
+                @test isapprox(norm(norm_canonized), 1.0)
+            end
+        end
+    end
+    
     # TODO test `evolve!` methods
 end

@@ -84,16 +84,5 @@ function LinearAlgebra.norm(ψ::Ansatz, p::Real = 2; kwargs...)
     p != 2 && throw(ArgumentError("p=$p is not implemented yet"))
 
     # TODO: Replace with contract(hcat(ψ, ψ')...) when implemented
-    value = contract(merge(TensorNetwork(ψ), TensorNetwork(ψ')); kwargs...)
-    println("value: $(inds(value))")
-
-    return value |> only |> sqrt |> abs
+    return contract(merge(TensorNetwork(ψ), TensorNetwork(ψ')); kwargs...) |> only |> sqrt |> abs
 end
-
-# function LinearAlgebra.norm(ψ::Ansatz, p::Real = 2; kwargs...)
-#     p != 2 && throw(ArgumentError("p=$p is not implemented yet"))
-
-#     # TODO: Replace with contract(hcat(ψ, ψ')...) when implemented
-#     return contract(merge(transform(TensorNetwork(ψ), Tenet.HyperindConverter()),
-#     transform(TensorNetwork(ψ'), Tenet.HyperindConverter())); kwargs...) |> only |> sqrt |> abs
-# end

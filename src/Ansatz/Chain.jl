@@ -228,8 +228,8 @@ function Base.rand(rng::Random.AbstractRNG, sampler::ChainSampler, ::Type{Open},
     Chain(Operator(), Open(), arrays)
 end
 
-@valsplit 2 Tenet.contract(tn::Chain, query::Symbol, site1::Site, site2::Site; direction::Symbol = :left) =
-    Tenet.contract!(copy(tn), Val(query), site1, site2; direction = direction)
+Tenet.contract(tn::Chain, query::Symbol, args...; kwargs...) = contract!(copy(tn), Val(query), args...; kwargs...)
+@valsplit 2 Tenet.contract!(tn::Chain, query::Symbol, args...; kwargs...) = error("Query ':$query' not defined")
 
 function Tenet.contract!(tn::Chain, ::Val{:between}, site1::Site, site2::Site; direction::Symbol = :left)
     Λᵢ = select(tn, :between, site1, site2)

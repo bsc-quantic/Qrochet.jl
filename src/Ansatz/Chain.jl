@@ -412,9 +412,10 @@ end
 Normalizes the input [`Chain`](@ref) tensor network by transforming it
 to mixed-canonized form with the given center site.
 """
-function LinearAlgebra.normalize!(tn::Chain, center::Site)
-    mixed_canonize!(tn, center)
-    normalize!(select(Quantum(tn), :tensor, center))
+function LinearAlgebra.normalize!(tn::Chain, root::Site; p::Real=2)
+    mixed_canonize!(tn, root)
+    normalize!(select(Quantum(tn), :tensor, root), p)
+    return tn
 end
 
 """

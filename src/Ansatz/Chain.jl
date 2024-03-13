@@ -1,6 +1,7 @@
 using Tenet
 using LinearAlgebra
 using Random
+using ValSplit
 using Muscle: gramschmidt!
 
 struct Chain <: Ansatz
@@ -227,12 +228,10 @@ function Base.rand(rng::Random.AbstractRNG, sampler::ChainSampler, ::Type{Open},
     Chain(Operator(), Open(), arrays)
 end
 
-Tenet.contract(tn::Chain, query::Symbol, args...; kwargs...) =
-    Tenet.contract!(copy(tn)::Chain, query, args...; kwargs...)
-@valsplit 2 Tenet.contract!(tn::Chain, query::Symbol, args...; kwargs...) =
-    Tenet.contract!(boundary(tn), tn::Chain, Val(query), args...; kwargs...)
+@valsplit 2 Tenet.contract(tn::Chain, query::Symbol, site1::Site, site2::Site; direction::Symbol = :left) =
+    Tenet.contract!(copy(tn), Val(query), site1, site2; direction=direction)
 
-function Tenet.contract!(::Open, tn::Chain, ::Val{:between}, site1::Site, site2::Site; direction::Symbol = :left)
+function Tenet.contract!(tn::Chain, ::Val{:between}, site1::Site, site2::Site; direction::Symbol = :left)
     Λᵢ = select(tn, :between, site1, site2)
     Λᵢ === nothing && return tn
 

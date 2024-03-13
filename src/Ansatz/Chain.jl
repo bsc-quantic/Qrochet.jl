@@ -376,7 +376,7 @@ function canonize!(::Open, tn::Chain)
     for i in 2:nsites(tn) # tensors at i in "A" form, need to contract (Λᵢ)⁻¹ with A to get Γᵢ
         Λᵢ = Λ[i-1] # singular values start between site 1 and 2
         A = select(tn, :tensor, Site(i))
-        Γᵢ = contract(A, Tensor(diag(pinv(Diagonal(parent(Λᵢ)), atol=1e-9)), inds(Λᵢ)), dims = ())
+        Γᵢ = contract(A, Tensor(diag(pinv(Diagonal(parent(Λᵢ)), atol = 1e-9)), inds(Λᵢ)), dims = ())
         replace!(TensorNetwork(tn), A => Γᵢ)
         push!(TensorNetwork(tn), Λᵢ)
     end

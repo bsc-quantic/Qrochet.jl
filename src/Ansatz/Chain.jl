@@ -311,14 +311,15 @@ end
 
 function isleftcanonical(qtn::Chain, site; atol::Real = 1e-12)
     right_ind = rightindex(qtn, site)
+    tensor = select(qtn, :tensor, site)
 
-    # we are at right-most site, which cannot be left-canonical
+    # we are at right-most site, we need to add an extra dummy dimension to the tensor
     if isnothing(right_ind)
-        return false
+        tensor = Tensor(reshape(parent(tensor), size(tensor)..., 1), (inds(tensor)..., :dummy_ind))
+        right_ind = :dummy_ind
     end
 
     # TODO is replace(conj(A)...) copying too much?
-    tensor = select(qtn, :tensor, site)
     contracted = contract(tensor, replace(conj(tensor), right_ind => :new_ind_name))
     n = size(tensor, right_ind)
     identity_matrix = Matrix(I, n, n)

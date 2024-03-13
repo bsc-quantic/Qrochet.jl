@@ -229,7 +229,7 @@ function Base.rand(rng::Random.AbstractRNG, sampler::ChainSampler, ::Type{Open},
 end
 
 @valsplit 2 Tenet.contract(tn::Chain, query::Symbol, site1::Site, site2::Site; direction::Symbol = :left) =
-    Tenet.contract!(copy(tn), Val(query), site1, site2; direction=direction)
+    Tenet.contract!(copy(tn), Val(query), site1, site2; direction = direction)
 
 function Tenet.contract!(tn::Chain, ::Val{:between}, site1::Site, site2::Site; direction::Symbol = :left)
     Λᵢ = select(tn, :between, site1, site2)

@@ -107,6 +107,29 @@
     @testset "Canonization" begin
         using Tenet
 
+        @testset "contract" begin
+            qtn = rand(Chain, Open, State; n = 5, p = 2, χ = 20)
+            canonized = canonize(qtn)
+
+            for i in 1:4
+                contract_some = contract(canonized, :between, Site(i), Site(i + 1))
+                Bᵢ = select(contract_some, :tensor, Site(i))
+
+                @test length(tensors(canonized)) == length(tensors(contract_some)) + 1 # We removed one singular value vector
+                @test_throws ArgumentError select(contract_some, :between, Site(i), Site(i + 1))
+
+                @test isrightcanonical(contract_some, Site(i))
+                @test isleftcanonical(
+                    contract(canonized, :between, Site(i), Site(i + 1); direction = :right),
+                    Site(i + 1),
+                )
+
+                Γᵢ = select(canonized, :tensor, Site(i))
+                Λᵢ₊₁ = select(canonized, :between, Site(i), Site(i + 1))
+                @test Bᵢ ≈ contract(Γᵢ, Λᵢ₊₁; dims = ())
+            end
+        end
+
         @testset "canonize_site" begin
             qtn = Chain(State(), Open(), [rand(4, 4), rand(4, 4, 4), rand(4, 4)])
 

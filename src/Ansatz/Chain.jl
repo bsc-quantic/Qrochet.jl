@@ -315,12 +315,12 @@ function isleftcanonical(qtn::Chain, site; atol::Real = 1e-12)
 
     # we are at right-most site, we need to add an extra dummy dimension to the tensor
     if isnothing(right_ind)
-        tensor = Tensor(reshape(parent(tensor), size(tensor)..., 1), (inds(tensor)..., :dummy_ind))
-        right_ind = :dummy_ind
+        right_ind = gensym(:dummy)
+        tensor = Tensor(reshape(parent(tensor), size(tensor)..., 1), (inds(tensor)..., right_ind))
     end
 
     # TODO is replace(conj(A)...) copying too much?
-    contracted = contract(tensor, replace(conj(tensor), right_ind => :new_ind_name))
+    contracted = contract(tensor, replace(conj(tensor), right_ind => gensym(:new_ind)))
     n = size(tensor, right_ind)
     identity_matrix = Matrix(I, n, n)
 
@@ -333,12 +333,12 @@ function isrightcanonical(qtn::Chain, site; atol::Real = 1e-12)
 
     # we are at left-most site, we need to add an extra dummy dimension to the tensor
     if isnothing(left_ind)
-        tensor = Tensor(reshape(parent(tensor), 1, size(tensor)...), (:dummy_ind, inds(tensor)...))
-        left_ind = :dummy_ind
+        left_ind = gensym(:dummy)
+        tensor = Tensor(reshape(parent(tensor), 1, size(tensor)...), (left_ind, inds(tensor)...))
     end
 
     #TODO is replace(conj(A)...) copying too much?
-    contracted = contract(tensor, replace(conj(tensor), left_ind => :new_ind_name))
+    contracted = contract(tensor, replace(conj(tensor), left_ind => gensym(:new_ind)))
     n = size(tensor, left_ind)
     identity_matrix = Matrix(I, n, n)
 

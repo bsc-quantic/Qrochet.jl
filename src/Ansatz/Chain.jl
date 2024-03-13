@@ -229,7 +229,7 @@ end
 
 Tenet.contract(tn::Chain, query::Symbol, args...; kwargs...) =
     Tenet.contract!(copy(tn)::Chain, query, args...; kwargs...)
-Tenet.contract!(tn::Chain, query::Symbol, args...; kwargs...) =
+@valsplit 2 Tenet.contract!(tn::Chain, query::Symbol, args...; kwargs...) =
     Tenet.contract!(boundary(tn), tn::Chain, Val(query), args...; kwargs...)
 
 function Tenet.contract!(::Open, tn::Chain, ::Val{:between}, site1::Site, site2::Site; direction::Symbol = :left)

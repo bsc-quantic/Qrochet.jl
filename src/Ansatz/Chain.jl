@@ -407,17 +407,14 @@ function mixed_canonize!(::Open, tn::Chain, center::Site) # TODO: center could b
 end
 
 """
-    normalize_by_mixed_canonization(tn::Chain)
+    LinearAlgebra.normalize!(tn::Chain, center::Site)
 
 Normalizes the input [`Chain`](@ref) tensor network by transforming it
-to a mixed-canonized form.
+to mixed-canonized form with the given center site.
 """
-function normalize_by_mixed_canonization(tn::Chain)
-    centersite = Site(((Quantum(tn) |> nsites) + 1) ÷ 2)
-    canonized = mixed_canonize(tn, centersite)
-    normalize!(select(Quantum(canonized), :tensor, centersite))
-
-    return canonized
+function LinearAlgebra.normalize!(tn::Chain, center::Site)
+    mixed_canonize!(tn, center)
+    normalize!(select(Quantum(tn), :tensor, center))
 end
 
 """

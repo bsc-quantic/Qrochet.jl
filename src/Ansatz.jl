@@ -67,7 +67,7 @@ function Tenet.select(tn::Ansatz, ::Val{:bond}, site1::Site, site2::Site)
     tensor2 = select(Quantum(tn), :tensor, site2)
 
     isdisjoint(inds(tensor1), inds(tensor2)) && return nothing
-    return inds(tensor1) ∩ inds(tensor2)
+    return only(inds(tensor1) ∩ inds(tensor2))
 end
 
 struct MissingSchmidtCoefficientsException <: Base.Exception

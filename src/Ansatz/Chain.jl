@@ -227,6 +227,30 @@ function Base.rand(rng::Random.AbstractRNG, sampler::ChainSampler, ::Type{Open},
     Chain(Operator(), Open(), arrays)
 end
 
+Tenet.contract(tn::Chain, query::Symbol, args...; kwargs...) =
+    Tenet.contract!(copy(tn)::Chain, query, args...; kwargs...)
+Tenet.contract!(tn::Chain, query::Symbol, args...; kwargs...) =
+    Tenet.contract!(boundary(tn), tn::Chain, Val(query), args...; kwargs...)
+
+function Tenet.contract!(::Open, tn::Chain, ::Val{:between}, site1::Site, site2::Site; direction::Symbol = :left)
+    Λᵢ = select(tn, :between, site1, site2)
+    Λᵢ === nothing && return tn
+
+    Λᵢ = pop!(TensorNetwork(tn), Λᵢ)
+
+    if direction === :right
+        Γᵢ₊₁ = select(tn, :tensor, site2)
+        replace!(TensorNetwork(tn), Γᵢ₊₁ => contract(Γᵢ₊₁, Λᵢ, dims = ()))
+    elseif direction === :left
+        Γᵢ = select(tn, :tensor, site1)
+        replace!(TensorNetwork(tn), Γᵢ => contract(Λᵢ, Γᵢ, dims = ()))
+    else
+        throw(ArgumentError("Unknown direction=:$direction"))
+    end
+
+    return tn
+end
+
 canonize_site(tn::Chain, args...; kwargs...) = canonize_site!(deepcopy(tn), args...; kwargs...)
 canonize_site!(tn::Chain, args...; kwargs...) = canonize_site!(boundary(tn), tn, args...; kwargs...)
 

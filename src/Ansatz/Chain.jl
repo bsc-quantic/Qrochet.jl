@@ -319,7 +319,7 @@ function truncate!(qtn::Chain, bond; threshold::Union{Nothing,Real} = nothing, m
     spectrum = parent(tensor)
 
     extent = if !isnothing(maxdim)
-        1:maxdim
+        1:min(size(TensorNetwork(qtn), vind), maxdim)
     elseif !isnothing(threshold)
         findall(>(threshold) ∘ abs, spectrum)
     else

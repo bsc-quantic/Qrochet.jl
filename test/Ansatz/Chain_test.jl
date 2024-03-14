@@ -111,6 +111,11 @@
             qtn = rand(Chain, Open, State; n = 5, p = 2, χ = 20)
             canonized = canonize(qtn)
 
+            @test_throws ArgumentError contract(canonized, :between, Site(1), Site(2); direction = :dummy)
+            @test_throws ArgumentError contract!(canonized, :between, Site(1), Site(2); direction = :dummy)
+
+            canonized = canonize(qtn)
+
             for i in 1:4
                 contract_some = contract(canonized, :between, Site(i), Site(i + 1))
                 Bᵢ = select(contract_some, :tensor, Site(i))

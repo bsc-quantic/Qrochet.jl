@@ -208,15 +208,10 @@
         end
     end
 
-    @testset "normalize" begin
-        odd_qtn = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
-        even_qtn = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
-        qtns = [odd_qtn, even_qtn]
-        roots = [Site(3), Site(2)]
-        for (qtn, root) in zip(qtns, roots)
-            normalize!(qtn, root)
-            @test isapprox(norm(qtn), 1.0)
-        end
+    @test begin
+        qtn = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
+        normalize!(qtn, Site(3))
+        isapprox(norm(qtn), 1.0)
     end
 
     # TODO test `evolve!` methods

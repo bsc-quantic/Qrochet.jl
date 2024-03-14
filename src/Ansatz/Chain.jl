@@ -1,7 +1,6 @@
 using Tenet
 using LinearAlgebra
 using Random
-using ValSplit
 using Muscle: gramschmidt!
 
 struct Chain <: Ansatz
@@ -230,7 +229,6 @@ end
 
 Tenet.contract(tn::Chain, query::Symbol, args...; kwargs...) = contract!(copy(tn), Val(query), args...; kwargs...)
 Tenet.contract!(tn::Chain, query::Symbol, args...; kwargs...) = contract!(tn, Val(query), args...; kwargs...)
-@valsplit 2 Tenet.contract!(tn::Chain, query::Symbol, args...; kwargs...) = error("Query ':$query' not defined")
 
 function Tenet.contract!(tn::Chain, ::Val{:between}, site1::Site, site2::Site; direction::Symbol = :left)
     Λᵢ = select(tn, :between, site1, site2)

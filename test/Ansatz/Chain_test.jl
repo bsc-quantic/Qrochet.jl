@@ -107,6 +107,33 @@
     @testset "Canonization" begin
         using Tenet
 
+        @testset "contract" begin
+            qtn = rand(Chain, Open, State; n = 5, p = 2, χ = 20)
+            let canonized = canonize(qtn)
+                @test_throws ArgumentError contract!(canonized, :between, Site(1), Site(2); direction = :dummy)
+            end
+
+            canonized = canonize(qtn)
+
+            for i in 1:4
+                contract_some = contract(canonized, :between, Site(i), Site(i + 1))
+                Bᵢ = select(contract_some, :tensor, Site(i))
+
+                @test isapprox(contract(TensorNetwork(contract_some)), contract(TensorNetwork(qtn)))
+                @test_throws ArgumentError select(contract_some, :between, Site(i), Site(i + 1))
+
+                @test isrightcanonical(contract_some, Site(i))
+                @test isleftcanonical(
+                    contract(canonized, :between, Site(i), Site(i + 1); direction = :right),
+                    Site(i + 1),
+                )
+
+                Γᵢ = select(canonized, :tensor, Site(i))
+                Λᵢ₊₁ = select(canonized, :between, Site(i), Site(i + 1))
+                @test Bᵢ ≈ contract(Γᵢ, Λᵢ₊₁; dims = ())
+            end
+        end
+
         @testset "canonize_site" begin
             qtn = Chain(State(), Open(), [rand(4, 4), rand(4, 4, 4), rand(4, 4)])
 
@@ -164,28 +191,34 @@
             Λ = [select(canonized, :between, Site(i), Site(i + 1)) for i in 1:4]
             @test map(λ -> sum(abs2, λ), Λ) ≈ ones(length(Λ)) * norm(canonized)^2
 
-            for i in 1:4
+            for i in 1:5
                 canonized = canonize(qtn)
 
                 if i == 1
                     @test isleftcanonical(canonized, Site(i))
+                elseif i == 5 # in the limits of the chain, we get the norm of the state
+                    contract!(canonized, :between, Site(i - 1), Site(i); direction = :right)
+                    tensor = select(canonized, :tensor, Site(i))
+                    replace!(TensorNetwork(canonized), tensor => tensor / norm(canonized))
+                    @test isleftcanonical(canonized, Site(i))
                 else
-                    Γᵢ = select(canonized, :tensor, Site(i))
-                    Λᵢ = pop!(TensorNetwork(canonized), select(canonized, :between, Site(i - 1), Site(i)))
-                    replace!(TensorNetwork(canonized), Γᵢ => contract(Λᵢ, Γᵢ; dims = ()))
+                    contract!(canonized, :between, Site(i - 1), Site(i); direction = :right)
                     @test isleftcanonical(canonized, Site(i))
                 end
             end
 
-            for i in 2:5
+            for i in 1:5
                 canonized = canonize(qtn)
 
-                if i == 5
+                if i == 1 # in the limits of the chain, we get the norm of the state
+                    contract!(canonized, :between, Site(i), Site(i + 1); direction = :left)
+                    tensor = select(canonized, :tensor, Site(i))
+                    replace!(TensorNetwork(canonized), tensor => tensor / norm(canonized))
+                    @test isrightcanonical(canonized, Site(i))
+                elseif i == 5
                     @test isrightcanonical(canonized, Site(i))
                 else
-                    Γᵢ = select(canonized, :tensor, Site(i))
-                    Λᵢ₊₁ = pop!(TensorNetwork(canonized), select(canonized, :between, Site(i), Site(i + 1)))
-                    replace!(TensorNetwork(canonized), Γᵢ => contract(Γᵢ, Λᵢ₊₁; dims = ()))
+                    contract!(canonized, :between, Site(i), Site(i + 1); direction = :left)
                     @test isrightcanonical(canonized, Site(i))
                 end
             end

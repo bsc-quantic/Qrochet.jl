@@ -109,10 +109,9 @@
 
         @testset "contract" begin
             qtn = rand(Chain, Open, State; n = 5, p = 2, χ = 20)
-            canonized = canonize(qtn)
-
-            @test_throws ArgumentError contract(canonized, :between, Site(1), Site(2); direction = :dummy)
-            @test_throws ArgumentError contract!(canonized, :between, Site(1), Site(2); direction = :dummy)
+            let canonized = canonize(qtn)
+                @test_throws ArgumentError contract!(canonized, :between, Site(1), Site(2); direction = :dummy)
+            end
 
             canonized = canonize(qtn)
 

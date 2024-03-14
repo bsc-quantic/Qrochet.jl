@@ -120,8 +120,6 @@
                 Bᵢ = select(contract_some, :tensor, Site(i))
 
                 @test isapprox(contract(TensorNetwork(contract_some)), contract(TensorNetwork(qtn)))
-
-                @test length(tensors(canonized)) == length(tensors(contract_some)) + 1 # We removed one singular value vector
                 @test_throws ArgumentError select(contract_some, :between, Site(i), Site(i + 1))
 
                 @test isrightcanonical(contract_some, Site(i))

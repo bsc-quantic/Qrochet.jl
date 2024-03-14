@@ -345,7 +345,6 @@ function isleftcanonical(qtn::Chain, site; atol::Real = 1e-12)
 
     # TODO is replace(conj(A)...) copying too much?
     contracted = contract(tensor, replace(conj(tensor), right_ind => :new_ind_name))
-    println("contracted: $contracted")
     n = size(tensor, right_ind)
     identity_matrix = Matrix(I, n, n)
 
@@ -364,7 +363,6 @@ function isrightcanonical(qtn::Chain, site; atol::Real = 1e-12)
 
     #TODO is replace(conj(A)...) copying too much?
     contracted = contract(tensor, replace(conj(tensor), left_ind => :new_ind_name))
-    println("contracted: $contracted")
     n = size(tensor, left_ind)
     identity_matrix = Matrix(I, n, n)
 

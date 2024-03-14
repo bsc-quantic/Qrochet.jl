@@ -218,6 +218,6 @@
             @test isapprox(norm(qtn), 1.0)
         end
     end
-    
+
     # TODO test `evolve!` methods
 end

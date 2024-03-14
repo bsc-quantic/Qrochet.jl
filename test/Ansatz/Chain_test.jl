@@ -208,5 +208,11 @@
         end
     end
 
+    @test begin
+        qtn = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
+        normalize!(qtn, Site(3))
+        isapprox(norm(qtn), 1.0)
+    end
+
     # TODO test `evolve!` methods
 end

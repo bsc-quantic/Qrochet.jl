@@ -229,6 +229,7 @@ function Base.rand(rng::Random.AbstractRNG, sampler::ChainSampler, ::Type{Open},
 end
 
 Tenet.contract(tn::Chain, query::Symbol, args...; kwargs...) = contract!(copy(tn), Val(query), args...; kwargs...)
+Tenet.contract!(tn::Chain, query::Symbol, args...; kwargs...) = contract!(tn, Val(query), args...; kwargs...)
 @valsplit 2 Tenet.contract!(tn::Chain, query::Symbol, args...; kwargs...) = error("Query ':$query' not defined")
 
 function Tenet.contract!(tn::Chain, ::Val{:between}, site1::Site, site2::Site; direction::Symbol = :left)
@@ -344,6 +345,7 @@ function isleftcanonical(qtn::Chain, site; atol::Real = 1e-12)
 
     # TODO is replace(conj(A)...) copying too much?
     contracted = contract(tensor, replace(conj(tensor), right_ind => :new_ind_name))
+    println("contracted: $contracted")
     n = size(tensor, right_ind)
     identity_matrix = Matrix(I, n, n)
 
@@ -362,6 +364,7 @@ function isrightcanonical(qtn::Chain, site; atol::Real = 1e-12)
 
     #TODO is replace(conj(A)...) copying too much?
     contracted = contract(tensor, replace(conj(tensor), left_ind => :new_ind_name))
+    println("contracted: $contracted")
     n = size(tensor, left_ind)
     identity_matrix = Matrix(I, n, n)
 

@@ -234,8 +234,6 @@ function Tenet.contract!(tn::Chain, ::Val{:between}, site1::Site, site2::Site; d
     Λᵢ = select(tn, :between, site1, site2)
     Λᵢ === nothing && return tn
 
-    Λᵢ = pop!(TensorNetwork(tn), Λᵢ)
-
     if direction === :right
         Γᵢ₊₁ = select(tn, :tensor, site2)
         replace!(TensorNetwork(tn), Γᵢ₊₁ => contract(Γᵢ₊₁, Λᵢ, dims = ()))
@@ -245,6 +243,8 @@ function Tenet.contract!(tn::Chain, ::Val{:between}, site1::Site, site2::Site; d
     else
         throw(ArgumentError("Unknown direction=:$direction"))
     end
+
+    delete!(TensorNetwork(tn), Λᵢ)
 
     return tn
 end

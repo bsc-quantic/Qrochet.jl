@@ -22,6 +22,8 @@
     end
 
     @testset "evolve" begin
+        using Quac: X, Z
+
         n = 10
         timesteps = 20
         δₜ = 0.1

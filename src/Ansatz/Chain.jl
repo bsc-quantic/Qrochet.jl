@@ -474,7 +474,7 @@ function evolve!(qtn::Chain, gate::Dense; threshold = nothing, maxdim = nothing,
         range != gate_inputs && throw(ArgumentError("Gate lanes must be contiguous"))
 
         # TODO check correctly for periodic boundary conditions
-        evolve_2site!(qtn, gate; threshold, maxdim, iscanonical=iscanonical)
+        evolve_2site!(qtn, gate; threshold, maxdim, iscanonical = iscanonical)
     else
         # TODO generalize for more than 2 lanes
         throw(ArgumentError("Invalid number of lanes $(nlanes(gate)), maximum is 2"))
@@ -547,8 +547,12 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical =
         U, s, Vt = svd(θ; left_inds, right_inds, virtualind)
 
         # contract with the inverse of Λᵢ and Λᵢ₊₂
-        Γᵢ = Λᵢ === nothing ? U : contract(U, Tensor(diag(pinv(Diagonal(parent(Λᵢ)), atol = 1e-28)), inds(Λᵢ)), dims = ())
-        Γᵢ₊₁ = Λᵢ₊₂ === nothing ? Vt : contract(Tensor(diag(pinv(Diagonal(parent(Λᵢ₊₂)), atol = 1e-28)), inds(Λᵢ₊₂)), Vt, dims = ())
+        Γᵢ =
+            Λᵢ === nothing ? U :
+            contract(U, Tensor(diag(pinv(Diagonal(parent(Λᵢ)), atol = 1e-28)), inds(Λᵢ)), dims = ())
+        Γᵢ₊₁ =
+            Λᵢ₊₂ === nothing ? Vt :
+            contract(Tensor(diag(pinv(Diagonal(parent(Λᵢ₊₂)), atol = 1e-28)), inds(Λᵢ₊₂)), Vt, dims = ())
 
         delete!(TensorNetwork(qtn), θ)
 
@@ -607,7 +611,7 @@ function get_θ!(ψ::Chain, i::Site)
     Λᵢ₊₁ = select(ψ, :between, i, Site(i.id + 1))
     Γᵢ₊₁ = select(ψ, :tensor, Site(i.id + 1))
 
-    tensors_to_contract = filter(x -> x !== nothing, [Λᵢ, contract(Γᵢ, Λᵢ₊₁; dims=()), Γᵢ₊₁, Λᵢ₊₂])
+    tensors_to_contract = filter(x -> x !== nothing, [Λᵢ, contract(Γᵢ, Λᵢ₊₁; dims = ()), Γᵢ₊₁, Λᵢ₊₂])
     inds_to_contract = inds(Γᵢ) ∩ inds(Γᵢ₊₁)
 
     θ = contract(tensors_to_contract...; dims = inds_to_contract)

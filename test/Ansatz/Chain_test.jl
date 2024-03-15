@@ -247,5 +247,43 @@
         isapprox(norm(qtn), 1.0)
     end
 
+    @testset "evolve" begin
+        n = 10
+        timesteps = 100
+        δₜ = 0.1
+
+        ket₊ = 1 / √2 * [1, 1]
+        ψ = convert(Chain, Product(fill(ket₊, n)))
+        observables = Dense.([Z(5)])
+
+        function trotter_XX(i, j; δₜ = δₜ)
+            mat = kron(Matrix(X()), Matrix(X()))
+            mat = cis(δₜ * mat)
+            mat = reshape(mat, 2, 2, 2, 2)
+            Dense(Qrochet.Operator(), mat; sites = [Site(i), Site(j), Site(i, dual = true), Site(j, dual = true)])
+        end
+
+        function trotter_Z(i; λ, δₜ = δₜ)
+            mat = Matrix(Z())
+            mat = cis(-λ * δₜ * mat)
+
+            Dense(Qrochet.Operator(), mat; sites = [Site(i), Site(i, dual = true)])
+        end
+        observe(ψ, observables)
+        observedvals = Float64[]
+        @time for it in 1:timesteps
+            println("timestep: ", it)
+            for (i, j) in Iterators.filter(==(2) ∘ length, Iterators.partition(1:n, 2))
+                evolve!(ψ, trotter_XX(i, j; δₜ))
+            end
+            for (i, j) in Iterators.filter(==(2) ∘ length, Iterators.partition(2:n, 2))
+                evolve!(ψ, trotter_XX(i, j; δₜ))
+            end
+            for i in 1:n
+                evolve!(ψ, trotter_Z(i; λ = 0.3, δₜ))
+            end
+            push!(observedvals, abs(only(observe(ψ, observables))))
+        end
+    end
     # TODO test `evolve!` methods
 end

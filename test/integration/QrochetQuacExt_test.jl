@@ -25,35 +25,35 @@
         n = 10
         timesteps = 20
         δₜ = 0.1
-        ket₊ = 1/√2 * [1, 1]
+        ket₊ = 1 / √2 * [1, 1]
         observables = Dense.([Z(5)])
 
-        function trotter_XX(i,j; δₜ=δₜ)
+        function trotter_XX(i, j; δₜ = δₜ)
             mat = kron(Matrix(X()), Matrix(X()))
             mat = cis(δₜ * mat)
-            mat = reshape(mat, 2,2,2,2)
-            Dense(Qrochet.Operator(), mat; sites=[Site(i), Site(j), Site(i, dual=true), Site(j, dual=true)])
+            mat = reshape(mat, 2, 2, 2, 2)
+            Dense(Qrochet.Operator(), mat; sites = [Site(i), Site(j), Site(i, dual = true), Site(j, dual = true)])
         end
 
-        function trotter_Z(i; λ, δₜ=δₜ)
+        function trotter_Z(i; λ, δₜ = δₜ)
             mat = Matrix(Z())
-            mat = cis(- λ * δₜ * mat)
+            mat = cis(-λ * δₜ * mat)
 
-            Dense(Qrochet.Operator(), mat; sites=[Site(i), Site(i, dual=true)])
+            Dense(Qrochet.Operator(), mat; sites = [Site(i), Site(i, dual = true)])
         end
 
         @testset "not canonical" begin
             ψ = convert(Chain, Product(fill(ket₊, n)))
 
             for it in 1:timesteps
-                for (i,j) in Iterators.filter(==(2) ∘ length, Iterators.partition(1:n,2))
-                    evolve!(ψ, trotter_XX(i,j; δₜ))
+                for (i, j) in Iterators.filter(==(2) ∘ length, Iterators.partition(1:n, 2))
+                    evolve!(ψ, trotter_XX(i, j; δₜ))
                 end
-                for (i,j) in Iterators.filter(==(2) ∘ length, Iterators.partition(2:n,2))
-                    evolve!(ψ, trotter_XX(i,j; δₜ))
+                for (i, j) in Iterators.filter(==(2) ∘ length, Iterators.partition(2:n, 2))
+                    evolve!(ψ, trotter_XX(i, j; δₜ))
                 end
                 for i in 1:n
-                    evolve!(ψ, trotter_Z(i; λ=0.3, δₜ))
+                    evolve!(ψ, trotter_Z(i; λ = 0.3, δₜ))
                 end
             end
         end
@@ -63,14 +63,14 @@
             canonize!(ψ)
 
             for it in 1:timesteps
-                for (i,j) in Iterators.filter(==(2) ∘ length, Iterators.partition(1:n,2))
-                    evolve!(ψ, trotter_XX(i,j; δₜ); iscanonical=true)
+                for (i, j) in Iterators.filter(==(2) ∘ length, Iterators.partition(1:n, 2))
+                    evolve!(ψ, trotter_XX(i, j; δₜ); iscanonical = true)
                 end
-                for (i,j) in Iterators.filter(==(2) ∘ length, Iterators.partition(2:n,2))
-                    evolve!(ψ, trotter_XX(i,j; δₜ); iscanonical=true)
+                for (i, j) in Iterators.filter(==(2) ∘ length, Iterators.partition(2:n, 2))
+                    evolve!(ψ, trotter_XX(i, j; δₜ); iscanonical = true)
                 end
                 for i in 1:n
-                    evolve!(ψ, trotter_Z(i; λ=0.3, δₜ);  iscanonical=true)
+                    evolve!(ψ, trotter_Z(i; λ = 0.3, δₜ); iscanonical = true)
                 end
             end
 
@@ -79,7 +79,7 @@
             @test isleftcanonical(ψ, Site(1))
             for i in 2:n
                 contracted = contract(ψ, :between, Site(i - 1), Site(i); direction = :right)
-                @test isleftcanonical(contracted, Site(i); atol=1e-10)
+                @test isleftcanonical(contracted, Site(i); atol = 1e-10)
             end
         end
     end

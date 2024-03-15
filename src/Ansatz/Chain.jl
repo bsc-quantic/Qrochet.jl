@@ -447,7 +447,7 @@ end
 
 Applies a local operator `gate` to the [`Chain`](@ref) tensor network.
 """
-function evolve!(qtn::Chain, gate::Dense; threshold = nothing, maxdim = nothing)
+function evolve!(qtn::Chain, gate::Dense; threshold = nothing, maxdim = nothing, iscanonical = false)
     # check gate is a valid operator
     if !(socket(gate) isa Operator)
         throw(ArgumentError("Gate must be an operator, but got $(socket(gate))"))
@@ -474,7 +474,7 @@ function evolve!(qtn::Chain, gate::Dense; threshold = nothing, maxdim = nothing)
         range != gate_inputs && throw(ArgumentError("Gate lanes must be contiguous"))
 
         # TODO check correctly for periodic boundary conditions
-        evolve_2site!(qtn, gate; threshold, maxdim)
+        evolve_2site!(qtn, gate; threshold, maxdim, iscanonical=iscanonical)
     else
         # TODO generalize for more than 2 lanes
         throw(ArgumentError("Invalid number of lanes $(nlanes(gate)), maximum is 2"))
@@ -502,7 +502,7 @@ function evolve_1site!(qtn::Chain, gate::Dense)
     contract!(TensorNetwork(qtn), contracting_index)
 end
 
-function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim)
+function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical = false)
     # shallow copy to avoid problems if errors in mid execution
     gate = copy(gate)
 
@@ -510,9 +510,9 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim)
     left_inds::Vector{Symbol} = !isnothing(leftindex(qtn, sitel)) ? [leftindex(qtn, sitel)] : Symbol[]
     right_inds::Vector{Symbol} = !isnothing(rightindex(qtn, siter)) ? [rightindex(qtn, siter)] : Symbol[]
 
-    # contract virtual index
     virtualind::Symbol = select(qtn, :bond, bond...)
-    contract!(TensorNetwork(qtn), virtualind)
+
+    iscanonicalform ? get_θ!(qtn, sitel) : contract!(TensorNetwork(qtn), virtualind)
 
     # reindex contracting index
     contracting_inds = [gensym(:tmp) for _ in inputs(gate)]
@@ -537,14 +537,88 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim)
     # decompose using SVD
     push!(left_inds, select(qtn, :index, sitel))
     push!(right_inds, select(qtn, :index, siter))
-    svd!(TensorNetwork(qtn); left_inds, right_inds, virtualind)
 
+    if iscanonicalform
+        Λᵢ = sitel.id == 1 ? nothing : select(qtn, :between, Site(sitel.id - 1), sitel)
+        Λᵢ₊₂ = siter.id == nsites(qtn) ? nothing : select(qtn, :between, Site(siter.id), Site(siter.id + 1))
+
+        # do svd of the θ tensor
+        θ = select(qtn, :tensor, sitel)
+        U, s, Vt = svd(θ; left_inds, right_inds, virtualind)
+
+        # contract with the inverse of Λᵢ and Λᵢ₊₂
+        Γᵢ = Λᵢ === nothing ? U : contract(U, Tensor(diag(pinv(Diagonal(parent(Λᵢ)), atol = 1e-9)), inds(Λᵢ)), dims = ())
+        Γᵢ₊₁ = Λᵢ₊₂ === nothing ? Vt : contract(Tensor(diag(pinv(Diagonal(parent(Λᵢ₊₂)), atol = 1e-9)), inds(Λᵢ₊₂)), Vt, dims = ())
+
+        delete!(TensorNetwork(qtn), θ)
+
+        push!(TensorNetwork(qtn), Γᵢ)
+        push!(TensorNetwork(qtn), s)
+        push!(TensorNetwork(qtn), Γᵢ₊₁)
+    else
+        svd!(TensorNetwork(qtn); left_inds, right_inds, virtualind)
+    end
     # truncate virtual index
     if any(!isnothing, [threshold, maxdim])
         truncate!(qtn, bond; threshold, maxdim)
     end
 
     return qtn
+end
+
+"""
+    θ(ψ::Chain, site::Site)
+
+For a [`Chain`](@ref) in the canonical form, returns the θ tensor (ΛᵢΓᵢΛᵢ₊₁Γᵢ₊₁Λᵢ₊₂), where i is the `site` index.
+"""
+function get_θ(ψ::Chain, i::Site)
+    # TODO Check if ψ is in canonical form
+
+    0 < i.id < nsites(ψ) || throw(ArgumentError("Site index must be between 1 and $(nsites(ψ))"))
+
+    Λᵢ = i.id == 1 ? nothing : select(ψ, :between, Site(i.id - 1), i)
+    Λᵢ₊₂ = i.id == nsites(ψ) ? nothing : select(ψ, :between, i, Site(i.id + 1))
+
+    Γᵢ = select(ψ, :tensor, i)
+    Λᵢ₊₁ = select(ψ, :between, i, Site(i.id + 1))
+    Γᵢ₊₁ = select(ψ, :tensor, Site(i.id + 1))
+
+    tensors_to_contract = filter(x -> x !== nothing, [Λᵢ, Γᵢ, Λᵢ₊₁, Γᵢ₊₁, Λᵢ₊₂])
+    inds_to_contract = inds(Γᵢ) ∩ inds(Γᵢ₊₁)
+
+    return contract(tensors_to_contract...; dims = inds_to_contract)
+end
+
+"""
+get_θ!(ψ::Chain, site::Site)
+
+For a [`Chain`](@ref) in the canonical form, forms the two-site wave function θ with ΛᵢΓᵢΛᵢ₊₁Γᵢ₊₁Λᵢ₊₂,
+where i is the `site` index, and replaces the ΓᵢΛᵢ₊₁Γᵢ₊₁ tensors with θ.
+"""
+function get_θ!(ψ::Chain, i::Site)
+    # TODO Check if ψ is in canonical form
+
+    0 < i.id < nsites(ψ) || throw(ArgumentError("Site index must be between 1 and $(nsites(ψ))"))
+
+    Λᵢ = i.id == 1 ? nothing : select(ψ, :between, Site(i.id - 1), i)
+    Λᵢ₊₂ = i.id == nsites(ψ) - 1 ? nothing : select(ψ, :between, Site(i.id + 1), Site(i.id + 2))
+
+    Γᵢ = select(ψ, :tensor, i)
+    Λᵢ₊₁ = select(ψ, :between, i, Site(i.id + 1))
+    Γᵢ₊₁ = select(ψ, :tensor, Site(i.id + 1))
+
+    tensors_to_contract = filter(x -> x !== nothing, [Λᵢ, contract(Γᵢ, Λᵢ₊₁; dims=()), Γᵢ₊₁, Λᵢ₊₂])
+    inds_to_contract = inds(Γᵢ) ∩ inds(Γᵢ₊₁)
+
+    θ = contract(tensors_to_contract...; dims = inds_to_contract)
+
+    delete!(TensorNetwork(ψ), Γᵢ)
+    delete!(TensorNetwork(ψ), Λᵢ₊₁)
+    delete!(TensorNetwork(ψ), Γᵢ₊₁)
+
+    push!(TensorNetwork(ψ), θ)
+
+    return ψ
 end
 
 function observe(ψ::Chain, observables)

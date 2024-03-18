@@ -571,11 +571,12 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical =
 end
 
 """
-    θ(ψ::Chain, site::Site)
+    contract_θ(ψ::Chain, site::Site)
 
-For a [`Chain`](@ref) in the canonical form, returns the θ tensor (ΛᵢΓᵢΛᵢ₊₁Γᵢ₊₁Λᵢ₊₂), where i is the `site` index.
+For a [`Chain`](@ref) in the canonical form, returns the two-site wave function θ tensor
+(ΛᵢΓᵢΛᵢ₊₁Γᵢ₊₁Λᵢ₊₂), where i is the `site` index.
 """
-function get_θ(ψ::Chain, i::Site)
+function contract_θ(ψ::Chain, i::Site)
     # TODO Check if ψ is in canonical form
 
     0 < i.id < nsites(ψ) || throw(ArgumentError("Site index must be between 1 and $(nsites(ψ))"))
@@ -594,12 +595,12 @@ function get_θ(ψ::Chain, i::Site)
 end
 
 """
-get_θ!(ψ::Chain, site::Site)
+    contract_θ!(ψ::Chain, site::Site)
 
 For a [`Chain`](@ref) in the canonical form, forms the two-site wave function θ with ΛᵢΓᵢΛᵢ₊₁Γᵢ₊₁Λᵢ₊₂,
 where i is the `site` index, and replaces the ΓᵢΛᵢ₊₁Γᵢ₊₁ tensors with θ.
 """
-function get_θ!(ψ::Chain, i::Site)
+function contract_θ!(ψ::Chain, i::Site)
     # TODO Check if ψ is in canonical form
 
     0 < i.id < nsites(ψ) || throw(ArgumentError("Site index must be between 1 and $(nsites(ψ))"))

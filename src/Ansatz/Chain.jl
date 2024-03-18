@@ -551,8 +551,8 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical =
             Λᵢ === nothing ? U :
             contract(U, Tensor(diag(pinv(Diagonal(parent(Λᵢ)), atol = 1e-28)), inds(Λᵢ)), dims = ())
         Γᵢ₊₁ =
-            Λᵢ₊₂ === nothing ? Vt :
-            contract(Tensor(diag(pinv(Diagonal(parent(Λᵢ₊₂)), atol = 1e-28)), inds(Λᵢ₊₂)), Vt, dims = ())
+            isnothing(Λᵢ₊₂) ? Vt :
+            contract(Tensor(diag(pinv(Diagonal(parent(Λᵢ₊₂)), atol = 1e-32)), inds(Λᵢ₊₂)), Vt, dims = ())
 
         delete!(TensorNetwork(qtn), θ)
 

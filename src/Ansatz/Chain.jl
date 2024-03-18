@@ -512,7 +512,7 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical =
 
     virtualind::Symbol = select(qtn, :bond, bond...)
 
-    iscanonical ? get_θ!(qtn, sitel) : contract!(TensorNetwork(qtn), virtualind)
+    iscanonical ? contract_θ!(qtn, sitel) : contract!(TensorNetwork(qtn), virtualind)
 
     # reindex contracting index
     contracting_inds = [gensym(:tmp) for _ in inputs(gate)]

@@ -547,7 +547,7 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim)
     return qtn
 end
 
-function observe(ψ::Chain, observables)
+function expect(ψ::Chain, observables)
     # contract observable with TN
     ϕ = copy(ψ)
     for observable in observables

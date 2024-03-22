@@ -559,3 +559,19 @@ function expect(ψ::Chain, observables)
 
     return contract(tn)
 end
+
+overlap(a::Chain, b::Chain) = overlap(socket(a), a, socket(b), b)
+
+# TODO fix optimal path
+function overlap(::State, a::Chain, ::State, b::Chain)
+    @assert issetequal(sites(a), sites(b)) "Ansatzes must have the same sites"
+
+    b = copy(b)
+    b = @reindex! outputs(a) => outputs(b)
+
+    tn = merge(TensorNetwork(a), TensorNetwork(b'))
+    return contract(tn)
+end
+
+overlap(a::Product, b::Chain) = overlap(convert(Chain, a), b)
+overlap(a::Chain, b::Product) = overlap(a, convert(Chain, b))

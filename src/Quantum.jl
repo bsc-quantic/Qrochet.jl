@@ -137,3 +137,38 @@ end
 @valsplit 2 Tenet.select(tn::Quantum, query::Symbol, args...) = error("Query ':$query' not defined")
 Tenet.select(tn::Quantum, ::Val{:index}, site::Site) = tn[site]
 Tenet.select(tn::Quantum, ::Val{:tensor}, site::Site) = select(TensorNetwork(tn), :any, tn[site]) |> only
+
+function reindex!(a::Quantum, ioa, b::Quantum, iob)
+    ioa ∈ [:inputs, :outputs] || error("Invalid argument: :$ioa")
+
+    sitesb = if iob === :inputs
+        inputs(b)
+    elseif iob === :outputs
+        outputs(b)
+    else
+        error("Invalid argument: :$iob")
+    end
+
+    replacements = map(sitesb) do site
+        select(b, :index, site) => select(a, :index, ioa != iob ? site' : site)
+    end
+    replace!(TensorNetwork(b), replacements...)
+
+    for site in sitesb
+        b.sites[site] = select(a, :index, ioa != iob ? site' : site)
+    end
+
+    b
+end
+
+macro reindex!(expr)
+    @assert Meta.isexpr(expr, :call) && expr.args[1] == :(=>)
+    Base.remove_linenums!(expr)
+    a, b = expr.args[2:end]
+
+    @assert Meta.isexpr(a, :call)
+    @assert Meta.isexpr(b, :call)
+    ioa, ida = a.args
+    iob, idb = b.args
+    return :((reindex!(Quantum($(esc(ida))), $(Meta.quot(ioa)), Quantum($(esc(idb))), $(Meta.quot(iob)))); $(esc(idb)))
+end

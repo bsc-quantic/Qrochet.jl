@@ -74,7 +74,7 @@ struct MissingSchmidtCoefficientsException <: Base.Exception
     bond::NTuple{2,Site}
 end
 
-MissingSchmidtCoefficientsException(bond::Vector{Site}) = MissingSchmidtCoefficientsException(tuple(bond...))
+MissingSchmidtCoefficientsException(bond::Vector{<:Site}) = MissingSchmidtCoefficientsException(tuple(bond...))
 
 function Base.showerror(io::IO, e::MissingSchmidtCoefficientsException)
     print(io, "Can't access the spectrum on bond $(e.bond)")

@@ -117,12 +117,12 @@ function Base.convert(::Type{Chain}, qtn::Product)
 end
 
 leftsite(tn::Chain, site::Site) = leftsite(boundary(tn), tn, site)
-leftsite(::Open, tn::Chain, site::Site) = site.id ∈ range(2, nlanes(tn)) ? Site(site.id - 1) : nothing
-leftsite(::Periodic, tn::Chain, site::Site) = Site(mod1(site.id - 1, nlanes(tn)))
+leftsite(::Open, tn::Chain, site::Site) = id(site) ∈ range(2, nlanes(tn)) ? Site(id(site) - 1) : nothing
+leftsite(::Periodic, tn::Chain, site::Site) = Site(mod1(id(site) - 1, nlanes(tn)))
 
 rightsite(tn::Chain, site::Site) = rightsite(boundary(tn), tn, site)
-rightsite(::Open, tn::Chain, site::Site) = site.id ∈ range(1, nlanes(tn) - 1) ? Site(site.id + 1) : nothing
-rightsite(::Periodic, tn::Chain, site::Site) = Site(mod1(site.id + 1, nlanes(tn)))
+rightsite(::Open, tn::Chain, site::Site) = id(site) ∈ range(1, nlanes(tn) - 1) ? Site(id(site) + 1) : nothing
+rightsite(::Periodic, tn::Chain, site::Site) = Site(mod1(id(site) + 1, nlanes(tn)))
 
 leftindex(tn::Chain, site::Site) = leftindex(boundary(tn), tn, site)
 leftindex(::Open, tn::Chain, site::Site) = site == site"1" ? nothing : leftindex(Periodic(), tn, site)
@@ -432,12 +432,12 @@ and in the center there is a matrix with singular values.
 """
 function mixed_canonize!(::Open, tn::Chain, center::Site) # TODO: center could be a range of sites
     # left-to-right QR sweep (left-canonical tensors)
-    for i in 1:center.id-1
+    for i in 1:id(center)-1
         canonize_site!(tn, Site(i); direction = :right, method = :qr)
     end
 
     # right-to-left QR sweep (right-canonical tensors)
-    for i in nsites(tn):-1:center.id+1
+    for i in nsites(tn):-1:id(center)+1
         canonize_site!(tn, Site(i); direction = :left, method = :qr)
     end
 
@@ -482,7 +482,7 @@ function evolve!(qtn::Chain, gate::Dense; threshold = nothing, maxdim = nothing,
     elseif nlanes(gate) == 2
         # check gate sites are contiguous
         # TODO refactor this out?
-        gate_inputs = sort!(map(x -> x.id, inputs(gate)))
+        gate_inputs = sort!(map(id, inputs(gate)))
         range = UnitRange(extrema(gate_inputs)...)
 
         range != gate_inputs && throw(ArgumentError("Gate lanes must be contiguous"))

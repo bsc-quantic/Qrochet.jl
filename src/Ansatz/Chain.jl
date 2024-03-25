@@ -502,6 +502,7 @@ function evolve_1site!(qtn::Chain, gate::Dense)
     contract!(TensorNetwork(qtn), contracting_index)
 end
 
+# TODO: Maybe rename iscanonical kwarg ?
 function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical = false)
     # shallow copy to avoid problems if errors in mid execution
     gate = copy(gate)
@@ -512,7 +513,7 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical =
 
     virtualind::Symbol = select(qtn, :bond, bond...)
 
-    iscanonical ? contract_θ!(qtn, sitel) : contract!(TensorNetwork(qtn), virtualind)
+    iscanonical ? contract_θ!(qtn, bond) : contract!(TensorNetwork(qtn), virtualind)
 
     # reindex contracting index
     contracting_inds = [gensym(:tmp) for _ in inputs(gate)]
@@ -539,22 +540,24 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical =
     push!(right_inds, select(qtn, :index, siter))
 
     if iscanonical
-        Λᵢ = sitel.id == 1 ? nothing : select(qtn, :between, Site(sitel.id - 1), sitel)
-        Λᵢ₊₂ = siter.id == nsites(qtn) ? nothing : select(qtn, :between, Site(siter.id), Site(siter.id + 1))
+        Λᵢ₋₁ = sitel.id == 1 ? nothing : select(qtn, :between, Site(sitel.id - 1), sitel)
+        Λᵢ₊₁ = siter.id == nsites(qtn) ? nothing : select(qtn, :between, siter, Site(siter.id + 1))
 
         # do svd of the θ tensor
         θ = select(qtn, :tensor, sitel)
         U, s, Vt = svd(θ; left_inds, right_inds, virtualind)
 
         # contract with the inverse of Λᵢ and Λᵢ₊₂
+        Γᵢ₋₁ =
+            isnothing(Λᵢ₋₁) ? U : contract(U, Tensor(diag(pinv(Diagonal(parent(Λᵢ₋₁)), atol = 1e-32)), inds(Λᵢ₋₁)), dims = ())
         Γᵢ =
-            isnothing(Λᵢ) ? U : contract(U, Tensor(diag(pinv(Diagonal(parent(Λᵢ)), atol = 1e-64)), inds(Λᵢ)), dims = ())
-        Γᵢ₊₁ =
-            isnothing(Λᵢ₊₂) ? Vt :
-            contract(Tensor(diag(pinv(Diagonal(parent(Λᵢ₊₂)), atol = 1e-64)), inds(Λᵢ₊₂)), Vt, dims = ())
+            isnothing(Λᵢ₊₁) ? Vt :
+            contract(Tensor(diag(pinv(Diagonal(parent(Λᵢ₊₁)), atol = 1e-32)), inds(Λᵢ₊₁)), Vt, dims = ())
 
         delete!(TensorNetwork(qtn), θ)
 
+        push!(TensorNetwork(qtn), Γᵢ₋₁)
+        push!(TensorNetwork(qtn), s)
         push!(TensorNetwork(qtn), Γᵢ)
         push!(TensorNetwork(qtn), s)
         push!(TensorNetwork(qtn), Γᵢ₊₁)
@@ -570,33 +573,24 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical =
 end
 
 """
-    contract_θ!(ψ::Chain, site::Site)
+    contract_θ!(ψ::Chain, bond)
 
-For a [`Chain`](@ref) in the canonical form, forms the two-site wave function θ with ΛᵢΓᵢΛᵢ₊₁Γᵢ₊₁Λᵢ₊₂,
-where i is the `site` index, and replaces the ΓᵢΛᵢ₊₁Γᵢ₊₁ tensors with θ.
+For a [`Chain`](@ref) in the canonical form, forms the two-site wave function θ with Λᵢ₋₁Γᵢ₋₁ΛᵢΓᵢΛᵢ₊₁,
+where i is the `bond`, and replaces the Γᵢ₋₁ΛᵢΓᵢ tensors with θ.
 """
-function contract_θ!(ψ::Chain, i::Site)
+function contract_θ!(ψ::Chain, bond)
     # TODO Check if ψ is in canonical form
 
-    0 < i.id < nsites(ψ) || throw(ArgumentError("Site index must be between 1 and $(nsites(ψ))"))
+    site_l, site_r = bond # TODO Check if bond is valid
+    (0 < site_l.id < nsites(ψ) || 0 < site_r.id < nsites(ψ)) || throw(ArgumentError("The sites in the bond must be between 1 and $(nsites(ψ))"))
 
-    Λᵢ = i.id == 1 ? nothing : select(ψ, :between, Site(i.id - 1), i)
-    Λᵢ₊₂ = i.id == nsites(ψ) - 1 ? nothing : select(ψ, :between, Site(i.id + 1), Site(i.id + 2))
+    Λᵢ₋₁ = site_l.id == 1 ? nothing : select(ψ, :between, Site(site_l.id - 1), site_l)
+    Λᵢ₊₁ = site_l.id == nsites(ψ) - 1 ? nothing : select(ψ, :between, site_r, Site(site_r.id + 1))
 
-    Γᵢ = select(ψ, :tensor, i)
-    Λᵢ₊₁ = select(ψ, :between, i, Site(i.id + 1))
-    Γᵢ₊₁ = select(ψ, :tensor, Site(i.id + 1))
+    !isnothing(Λᵢ₋₁) && contract!(ψ, :between, Site(site_l.id - 1), site_l; direction = :right, delete_Λ = false)
+    !isnothing(Λᵢ₊₁) && contract!(ψ, :between, site_r, Site(site_r.id + 1); direction = :left, delete_Λ = false)
 
-    tensors_to_contract = filter(x -> x !== nothing, [Λᵢ, contract(Γᵢ, Λᵢ₊₁; dims = ()), Γᵢ₊₁, Λᵢ₊₂])
-    inds_to_contract = inds(Γᵢ) ∩ inds(Γᵢ₊₁)
-
-    θ = contract(tensors_to_contract...; dims = inds_to_contract)
-
-    delete!(TensorNetwork(ψ), Γᵢ)
-    delete!(TensorNetwork(ψ), Λᵢ₊₁)
-    delete!(TensorNetwork(ψ), Γᵢ₊₁)
-
-    push!(TensorNetwork(ψ), θ)
+    contract!(TensorNetwork(ψ), select(ψ, :bond, bond...))
 
     return ψ
 end

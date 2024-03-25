@@ -575,15 +575,15 @@ where i is the `bond`, and replaces the Γᵢ₋₁ΛᵢΓᵢ tensors with θ.
 function contract_2sitewf!(ψ::Chain, bond)
     # TODO Check if ψ is in canonical form
 
-    site_l, site_r = bond # TODO Check if bond is valid
-    (0 < id(site_l) < nsites(ψ) || 0 < id(site_r) < nsites(ψ)) ||
+    sitel, siter = bond # TODO Check if bond is valid
+    (0 < id(sitel) < nsites(ψ) || 0 < id(siter) < nsites(ψ)) ||
         throw(ArgumentError("The sites in the bond must be between 1 and $(nsites(ψ))"))
 
-    Λᵢ₋₁ = id(site_l) == 1 ? nothing : select(ψ, :between, Site(id(site_l) - 1), site_l)
-    Λᵢ₊₁ = id(site_l) == nsites(ψ) - 1 ? nothing : select(ψ, :between, site_r, Site(id(site_r) + 1))
+    Λᵢ₋₁ = id(sitel) == 1 ? nothing : select(ψ, :between, Site(id(sitel) - 1), sitel)
+    Λᵢ₊₁ = id(sitel) == nsites(ψ) - 1 ? nothing : select(ψ, :between, siter, Site(id(siter) + 1))
 
-    !isnothing(Λᵢ₋₁) && contract!(ψ, :between, Site(id(site_l) - 1), site_l; direction = :right, delete_Λ = false)
-    !isnothing(Λᵢ₊₁) && contract!(ψ, :between, site_r, Site(id(site_r) + 1); direction = :left, delete_Λ = false)
+    !isnothing(Λᵢ₋₁) && contract!(ψ, :between, Site(id(sitel) - 1), sitel; direction = :right, delete_Λ = false)
+    !isnothing(Λᵢ₊₁) && contract!(ψ, :between, siter, Site(id(siter) + 1); direction = :left, delete_Λ = false)
 
     contract!(TensorNetwork(ψ), select(ψ, :bond, bond...))
 
@@ -599,7 +599,7 @@ form: Γᵢ₋₁ΛᵢΓᵢ, where i is the `bond`.
 function unpack_2sitewf!(ψ::Chain, bond)
     # TODO Check if ψ is in canonical form
 
-    site_l, site_r = bond # TODO Check if bond is valid
+    sitel, siter = bond # TODO Check if bond is valid
     (0 < id(site_l) < nsites(ψ) || 0 < id(site_r) < nsites(ψ)) ||
         throw(ArgumentError("The sites in the bond must be between 1 and $(nsites(ψ))"))
 

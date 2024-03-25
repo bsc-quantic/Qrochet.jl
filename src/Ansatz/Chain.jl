@@ -554,7 +554,7 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical =
     push!(right_inds, select(qtn, :index, siter))
 
     if iscanonical
-        unpack_2sitewf!(qtn, bond)
+        unpack_2sitewf!(qtn, bond, left_inds, right_inds, virtualind)
     else
         svd!(TensorNetwork(qtn); left_inds, right_inds, virtualind)
     end
@@ -596,7 +596,7 @@ end
 For a given [`Chain`](@ref) that contains a two-site wave function θ in a bond, it decomposes θ into the canonical
 form: Γᵢ₋₁ΛᵢΓᵢ, where i is the `bond`.
 """
-function unpack_2sitewf!(ψ::Chain, bond)
+function unpack_2sitewf!(ψ::Chain, bond, left_inds, right_inds, virtualind)
     # TODO Check if ψ is in canonical form
 
     sitel, siter = bond # TODO Check if bond is valid

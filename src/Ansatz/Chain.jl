@@ -554,26 +554,7 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical =
     push!(right_inds, select(qtn, :index, siter))
 
     if iscanonical
-        Λᵢ₋₁ = sitel.id == 1 ? nothing : select(qtn, :between, Site(sitel.id - 1), sitel)
-        Λᵢ₊₁ = siter.id == nsites(qtn) ? nothing : select(qtn, :between, siter, Site(siter.id + 1))
-
-        # do svd of the θ tensor
-        θ = select(qtn, :tensor, sitel)
-        U, s, Vt = svd(θ; left_inds, right_inds, virtualind)
-
-        # contract with the inverse of Λᵢ and Λᵢ₊₂
-        Γᵢ₋₁ =
-            isnothing(Λᵢ₋₁) ? U :
-            contract(U, Tensor(diag(pinv(Diagonal(parent(Λᵢ₋₁)), atol = 1e-32)), inds(Λᵢ₋₁)), dims = ())
-        Γᵢ =
-            isnothing(Λᵢ₊₁) ? Vt :
-            contract(Tensor(diag(pinv(Diagonal(parent(Λᵢ₊₁)), atol = 1e-32)), inds(Λᵢ₊₁)), Vt, dims = ())
-
-        delete!(TensorNetwork(qtn), θ)
-
-        push!(TensorNetwork(qtn), Γᵢ₋₁)
-        push!(TensorNetwork(qtn), s)
-        push!(TensorNetwork(qtn), Γᵢ)
+        unpack_2sitewf!(qtn, bond)
     else
         svd!(TensorNetwork(qtn); left_inds, right_inds, virtualind)
     end
@@ -605,6 +586,37 @@ function contract_2sitewf!(ψ::Chain, bond)
     !isnothing(Λᵢ₊₁) && contract!(ψ, :between, site_r, Site(site_r.id + 1); direction = :left, delete_Λ = false)
 
     contract!(TensorNetwork(ψ), select(ψ, :bond, bond...))
+
+    return ψ
+end
+
+"""
+    unpack_2sitewf!(ψ::Chain, bond)
+
+For a given [`Chain`](@ref) that a two-site wave function θ in a bond, it decomposes θ into the canonical
+form: Γᵢ₋₁ΛᵢΓᵢ, where i is the `bond`.
+"""
+function unpack_2sitewf!(ψ::Chain, bond)
+    Λᵢ₋₁ = sitel.id == 1 ? nothing : select(ψ, :between, Site(sitel.id - 1), sitel)
+    Λᵢ₊₁ = siter.id == nsites(ψ) ? nothing : select(ψ, :between, siter, Site(siter.id + 1))
+
+    # do svd of the θ tensor
+    θ = select(ψ, :tensor, sitel)
+    U, s, Vt = svd(θ; left_inds, right_inds, virtualind)
+
+    # contract with the inverse of Λᵢ and Λᵢ₊₂
+    Γᵢ₋₁ =
+        isnothing(Λᵢ₋₁) ? U :
+        contract(U, Tensor(diag(pinv(Diagonal(parent(Λᵢ₋₁)), atol = 1e-32)), inds(Λᵢ₋₁)), dims = ())
+    Γᵢ =
+        isnothing(Λᵢ₊₁) ? Vt :
+        contract(Tensor(diag(pinv(Diagonal(parent(Λᵢ₊₁)), atol = 1e-32)), inds(Λᵢ₊₁)), Vt, dims = ())
+
+    delete!(TensorNetwork(ψ), θ)
+
+    push!(TensorNetwork(ψ), Γᵢ₋₁)
+    push!(TensorNetwork(ψ), s)
+    push!(TensorNetwork(ψ), Γᵢ)
 
     return ψ
 end

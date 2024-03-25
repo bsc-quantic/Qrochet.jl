@@ -559,8 +559,6 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical =
         push!(TensorNetwork(qtn), Γᵢ₋₁)
         push!(TensorNetwork(qtn), s)
         push!(TensorNetwork(qtn), Γᵢ)
-        push!(TensorNetwork(qtn), s)
-        push!(TensorNetwork(qtn), Γᵢ₊₁)
     else
         svd!(TensorNetwork(qtn); left_inds, right_inds, virtualind)
     end

@@ -587,12 +587,12 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical =
 end
 
 """
-    contract_θ!(ψ::Chain, bond)
+    contract_2sitewf!(ψ::Chain, bond)
 
-For a [`Chain`](@ref) in the canonical form, forms the two-site wave function θ with Λᵢ₋₁Γᵢ₋₁ΛᵢΓᵢΛᵢ₊₁,
+For a given [`Chain`](@ref) in the canonical form, creates the two-site wave function θ with Λᵢ₋₁Γᵢ₋₁ΛᵢΓᵢΛᵢ₊₁,
 where i is the `bond`, and replaces the Γᵢ₋₁ΛᵢΓᵢ tensors with θ.
 """
-function contract_θ!(ψ::Chain, bond)
+function contract_2sitewf!(ψ::Chain, bond)
     # TODO Check if ψ is in canonical form
 
     site_l, site_r = bond # TODO Check if bond is valid

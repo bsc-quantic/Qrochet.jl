@@ -236,7 +236,6 @@ Tenet.contract!(tn::Chain, query::Symbol, args...; kwargs...) = contract!(tn, Va
 For a given [`Chain`](@ref) tensor network, contracts the singular values Λ between two sites `site1` and `site2`.
 The `direction` keyword argument specifies the direction of the contraction, and the `delete_Λ` keyword argument
 specifies whether to delete the singular values tensor after the contraction.
-
 """
 function Tenet.contract!(
     tn::Chain,

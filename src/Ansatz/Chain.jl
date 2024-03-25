@@ -576,14 +576,14 @@ function contract_2sitewf!(ψ::Chain, bond)
     # TODO Check if ψ is in canonical form
 
     site_l, site_r = bond # TODO Check if bond is valid
-    (0 < site_l.id < nsites(ψ) || 0 < site_r.id < nsites(ψ)) ||
+    (0 < id(site_l) < nsites(ψ) || 0 < id(site_r) < nsites(ψ)) ||
         throw(ArgumentError("The sites in the bond must be between 1 and $(nsites(ψ))"))
 
-    Λᵢ₋₁ = site_l.id == 1 ? nothing : select(ψ, :between, Site(site_l.id - 1), site_l)
-    Λᵢ₊₁ = site_l.id == nsites(ψ) - 1 ? nothing : select(ψ, :between, site_r, Site(site_r.id + 1))
+    Λᵢ₋₁ = id(site_l) == 1 ? nothing : select(ψ, :between, Site(id(site_l) - 1), site_l)
+    Λᵢ₊₁ = id(site_l) == nsites(ψ) - 1 ? nothing : select(ψ, :between, site_r, Site(id(site_r) + 1))
 
-    !isnothing(Λᵢ₋₁) && contract!(ψ, :between, Site(site_l.id - 1), site_l; direction = :right, delete_Λ = false)
-    !isnothing(Λᵢ₊₁) && contract!(ψ, :between, site_r, Site(site_r.id + 1); direction = :left, delete_Λ = false)
+    !isnothing(Λᵢ₋₁) && contract!(ψ, :between, Site(id(site_l) - 1), site_l; direction = :right, delete_Λ = false)
+    !isnothing(Λᵢ₊₁) && contract!(ψ, :between, site_r, Site(id(site_r) + 1); direction = :left, delete_Λ = false)
 
     contract!(TensorNetwork(ψ), select(ψ, :bond, bond...))
 
@@ -597,8 +597,14 @@ For a given [`Chain`](@ref) that a two-site wave function θ in a bond, it decom
 form: Γᵢ₋₁ΛᵢΓᵢ, where i is the `bond`.
 """
 function unpack_2sitewf!(ψ::Chain, bond)
-    Λᵢ₋₁ = sitel.id == 1 ? nothing : select(ψ, :between, Site(sitel.id - 1), sitel)
-    Λᵢ₊₁ = siter.id == nsites(ψ) ? nothing : select(ψ, :between, siter, Site(siter.id + 1))
+    # TODO Check if ψ is in canonical form
+
+    site_l, site_r = bond # TODO Check if bond is valid
+    (0 < id(site_l) < nsites(ψ) || 0 < id(site_r) < nsites(ψ)) ||
+        throw(ArgumentError("The sites in the bond must be between 1 and $(nsites(ψ))"))
+
+    Λᵢ₋₁ = id(sitel) == 1 ? nothing : select(ψ, :between, Site(id(sitel) - 1), sitel)
+    Λᵢ₊₁ = id(siter) == nsites(ψ) ? nothing : select(ψ, :between, siter, Site(id(siter) + 1))
 
     # do svd of the θ tensor
     θ = select(ψ, :tensor, sitel)

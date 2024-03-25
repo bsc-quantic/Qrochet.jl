@@ -230,6 +230,14 @@ end
 Tenet.contract(tn::Chain, query::Symbol, args...; kwargs...) = contract!(copy(tn), Val(query), args...; kwargs...)
 Tenet.contract!(tn::Chain, query::Symbol, args...; kwargs...) = contract!(tn, Val(query), args...; kwargs...)
 
+"""
+    Tenet.contract!(tn::Chain, ::Val{:between}, site1::Site, site2::Site; direction::Symbol = :left, delete_Λ = true)
+
+For a given [`Chain`](@ref) tensor network, contracts the singular values Λ between two sites `site1` and `site2`.
+The `direction` keyword argument specifies the direction of the contraction, and the `delete_Λ` keyword argument
+specifies whether to delete the singular values tensor after the contraction.
+
+"""
 function Tenet.contract!(
     tn::Chain,
     ::Val{:between},
@@ -520,7 +528,7 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical =
 
     virtualind::Symbol = select(qtn, :bond, bond...)
 
-    iscanonical ? contract_θ!(qtn, bond) : contract!(TensorNetwork(qtn), virtualind)
+    iscanonical ? contract_2sitewf!(qtn, bond) : contract!(TensorNetwork(qtn), virtualind)
 
     # reindex contracting index
     contracting_inds = [gensym(:tmp) for _ in inputs(gate)]

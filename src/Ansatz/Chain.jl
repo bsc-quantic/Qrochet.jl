@@ -600,7 +600,7 @@ function unpack_2sitewf!(ψ::Chain, bond)
     # TODO Check if ψ is in canonical form
 
     sitel, siter = bond # TODO Check if bond is valid
-    (0 < id(site_l) < nsites(ψ) || 0 < id(site_r) < nsites(ψ)) ||
+    (0 < id(sitel) < nsites(ψ) || 0 < id(site_r) < nsites(ψ)) ||
         throw(ArgumentError("The sites in the bond must be between 1 and $(nsites(ψ))"))
 
     Λᵢ₋₁ = id(sitel) == 1 ? nothing : select(ψ, :between, Site(id(sitel) - 1), sitel)

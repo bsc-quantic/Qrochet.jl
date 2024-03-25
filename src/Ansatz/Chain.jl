@@ -593,7 +593,7 @@ end
 """
     unpack_2sitewf!(ψ::Chain, bond)
 
-For a given [`Chain`](@ref) that a two-site wave function θ in a bond, it decomposes θ into the canonical
+For a given [`Chain`](@ref) that contains a two-site wave function θ in a bond, it decomposes θ into the canonical
 form: Γᵢ₋₁ΛᵢΓᵢ, where i is the `bond`.
 """
 function unpack_2sitewf!(ψ::Chain, bond)

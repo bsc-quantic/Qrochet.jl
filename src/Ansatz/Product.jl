@@ -54,3 +54,13 @@ function LinearAlgebra.normalize!(::Union{State,Operator}, tn::Product, p::Real)
     end
     tn
 end
+
+overlap(a::Product, b::Product) = overlap(socket(a), a, socket(b), b)
+
+function overlap(::State, a::Product, ::State, b::Product)
+    @assert issetequal(sites(a), sites(b)) "Ansatzes must have the same sites"
+
+    mapreduce(*, zip(tensors(a), tensors(b))) do (ta, tb)
+        dot(parent(ta), conj(parent(tb)))
+    end
+end

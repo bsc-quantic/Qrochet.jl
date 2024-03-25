@@ -398,7 +398,7 @@ function canonize!(::Open, tn::Chain)
     for i in 2:nsites(tn) # tensors at i in "A" form, need to contract (Λᵢ)⁻¹ with A to get Γᵢ
         Λᵢ = Λ[i-1] # singular values start between site 1 and 2
         A = select(tn, :tensor, Site(i))
-        Γᵢ = contract(A, Tensor(diag(pinv(Diagonal(parent(Λᵢ)), atol = 1e-9)), inds(Λᵢ)), dims = ())
+        Γᵢ = contract(A, Tensor(diag(pinv(Diagonal(parent(Λᵢ)), atol = 1e-64)), inds(Λᵢ)), dims = ())
         replace!(TensorNetwork(tn), A => Γᵢ)
         push!(TensorNetwork(tn), Λᵢ)
     end
@@ -593,7 +593,7 @@ function contract_θ!(ψ::Chain, bond)
     return ψ
 end
 
-function observe(ψ::Chain, observables)
+function expect(ψ::Chain, observables)
     # contract observable with TN
     ϕ = copy(ψ)
     for observable in observables
@@ -605,3 +605,19 @@ function observe(ψ::Chain, observables)
 
     return contract(tn)
 end
+
+overlap(a::Chain, b::Chain) = overlap(socket(a), a, socket(b), b)
+
+# TODO fix optimal path
+function overlap(::State, a::Chain, ::State, b::Chain)
+    @assert issetequal(sites(a), sites(b)) "Ansatzes must have the same sites"
+
+    b = copy(b)
+    b = @reindex! outputs(a) => outputs(b)
+
+    tn = merge(TensorNetwork(a), TensorNetwork(b'))
+    return contract(tn)
+end
+
+overlap(a::Product, b::Chain) = overlap(convert(Chain, a), b)
+overlap(a::Chain, b::Product) = overlap(a, convert(Chain, b))

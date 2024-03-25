@@ -587,7 +587,8 @@ function contract_θ!(ψ::Chain, bond)
     # TODO Check if ψ is in canonical form
 
     site_l, site_r = bond # TODO Check if bond is valid
-    (0 < site_l.id < nsites(ψ) || 0 < site_r.id < nsites(ψ)) || throw(ArgumentError("The sites in the bond must be between 1 and $(nsites(ψ))"))
+    (0 < site_l.id < nsites(ψ) || 0 < site_r.id < nsites(ψ)) ||
+        throw(ArgumentError("The sites in the bond must be between 1 and $(nsites(ψ))"))
 
     Λᵢ₋₁ = site_l.id == 1 ? nothing : select(ψ, :between, Site(site_l.id - 1), site_l)
     Λᵢ₊₁ = site_l.id == nsites(ψ) - 1 ? nothing : select(ψ, :between, site_r, Site(site_r.id + 1))

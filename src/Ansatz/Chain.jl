@@ -230,7 +230,21 @@ end
 Tenet.contract(tn::Chain, query::Symbol, args...; kwargs...) = contract!(copy(tn), Val(query), args...; kwargs...)
 Tenet.contract!(tn::Chain, query::Symbol, args...; kwargs...) = contract!(tn, Val(query), args...; kwargs...)
 
-function Tenet.contract!(tn::Chain, ::Val{:between}, site1::Site, site2::Site; direction::Symbol = :left)
+"""
+    Tenet.contract!(tn::Chain, ::Val{:between}, site1::Site, site2::Site; direction::Symbol = :left, delete_Λ = true)
+
+For a given [`Chain`](@ref) tensor network, contracts the singular values Λ between two sites `site1` and `site2`.
+The `direction` keyword argument specifies the direction of the contraction, and the `delete_Λ` keyword argument
+specifies whether to delete the singular values tensor after the contraction.
+"""
+function Tenet.contract!(
+    tn::Chain,
+    ::Val{:between},
+    site1::Site,
+    site2::Site;
+    direction::Symbol = :left,
+    delete_Λ = true,
+)
     Λᵢ = select(tn, :between, site1, site2)
     Λᵢ === nothing && return tn
 
@@ -244,7 +258,7 @@ function Tenet.contract!(tn::Chain, ::Val{:between}, site1::Site, site2::Site; d
         throw(ArgumentError("Unknown direction=:$direction"))
     end
 
-    delete!(TensorNetwork(tn), Λᵢ)
+    delete_Λ && delete!(TensorNetwork(tn), Λᵢ)
 
     return tn
 end
@@ -447,7 +461,7 @@ end
 
 Applies a local operator `gate` to the [`Chain`](@ref) tensor network.
 """
-function evolve!(qtn::Chain, gate::Dense; threshold = nothing, maxdim = nothing)
+function evolve!(qtn::Chain, gate::Dense; threshold = nothing, maxdim = nothing, iscanonical = false)
     # check gate is a valid operator
     if !(socket(gate) isa Operator)
         throw(ArgumentError("Gate must be an operator, but got $(socket(gate))"))
@@ -474,7 +488,7 @@ function evolve!(qtn::Chain, gate::Dense; threshold = nothing, maxdim = nothing)
         range != gate_inputs && throw(ArgumentError("Gate lanes must be contiguous"))
 
         # TODO check correctly for periodic boundary conditions
-        evolve_2site!(qtn, gate; threshold, maxdim)
+        evolve_2site!(qtn, gate; threshold, maxdim, iscanonical = iscanonical)
     else
         # TODO generalize for more than 2 lanes
         throw(ArgumentError("Invalid number of lanes $(nlanes(gate)), maximum is 2"))
@@ -502,7 +516,8 @@ function evolve_1site!(qtn::Chain, gate::Dense)
     contract!(TensorNetwork(qtn), contracting_index)
 end
 
-function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim)
+# TODO: Maybe rename iscanonical kwarg ?
+function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical = false)
     # shallow copy to avoid problems if errors in mid execution
     gate = copy(gate)
 
@@ -510,9 +525,9 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim)
     left_inds::Vector{Symbol} = !isnothing(leftindex(qtn, sitel)) ? [leftindex(qtn, sitel)] : Symbol[]
     right_inds::Vector{Symbol} = !isnothing(rightindex(qtn, siter)) ? [rightindex(qtn, siter)] : Symbol[]
 
-    # contract virtual index
     virtualind::Symbol = select(qtn, :bond, bond...)
-    contract!(TensorNetwork(qtn), virtualind)
+
+    iscanonical ? contract_2sitewf!(qtn, bond) : contract!(TensorNetwork(qtn), virtualind)
 
     # reindex contracting index
     contracting_inds = [gensym(:tmp) for _ in inputs(gate)]
@@ -537,14 +552,79 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim)
     # decompose using SVD
     push!(left_inds, select(qtn, :index, sitel))
     push!(right_inds, select(qtn, :index, siter))
-    svd!(TensorNetwork(qtn); left_inds, right_inds, virtualind)
 
+    if iscanonical
+        unpack_2sitewf!(qtn, bond, left_inds, right_inds, virtualind)
+    else
+        svd!(TensorNetwork(qtn); left_inds, right_inds, virtualind)
+    end
     # truncate virtual index
     if any(!isnothing, [threshold, maxdim])
         truncate!(qtn, bond; threshold, maxdim)
     end
 
     return qtn
+end
+
+"""
+    contract_2sitewf!(ψ::Chain, bond)
+
+For a given [`Chain`](@ref) in the canonical form, creates the two-site wave function θ with Λᵢ₋₁Γᵢ₋₁ΛᵢΓᵢΛᵢ₊₁,
+where i is the `bond`, and replaces the Γᵢ₋₁ΛᵢΓᵢ tensors with θ.
+"""
+function contract_2sitewf!(ψ::Chain, bond)
+    # TODO Check if ψ is in canonical form
+
+    sitel, siter = bond # TODO Check if bond is valid
+    (0 < id(sitel) < nsites(ψ) || 0 < id(siter) < nsites(ψ)) ||
+        throw(ArgumentError("The sites in the bond must be between 1 and $(nsites(ψ))"))
+
+    Λᵢ₋₁ = id(sitel) == 1 ? nothing : select(ψ, :between, Site(id(sitel) - 1), sitel)
+    Λᵢ₊₁ = id(sitel) == nsites(ψ) - 1 ? nothing : select(ψ, :between, siter, Site(id(siter) + 1))
+
+    !isnothing(Λᵢ₋₁) && contract!(ψ, :between, Site(id(sitel) - 1), sitel; direction = :right, delete_Λ = false)
+    !isnothing(Λᵢ₊₁) && contract!(ψ, :between, siter, Site(id(siter) + 1); direction = :left, delete_Λ = false)
+
+    contract!(TensorNetwork(ψ), select(ψ, :bond, bond...))
+
+    return ψ
+end
+
+"""
+    unpack_2sitewf!(ψ::Chain, bond)
+
+For a given [`Chain`](@ref) that contains a two-site wave function θ in a bond, it decomposes θ into the canonical
+form: Γᵢ₋₁ΛᵢΓᵢ, where i is the `bond`.
+"""
+function unpack_2sitewf!(ψ::Chain, bond, left_inds, right_inds, virtualind)
+    # TODO Check if ψ is in canonical form
+
+    sitel, siter = bond # TODO Check if bond is valid
+    (0 < id(sitel) < nsites(ψ) || 0 < id(site_r) < nsites(ψ)) ||
+        throw(ArgumentError("The sites in the bond must be between 1 and $(nsites(ψ))"))
+
+    Λᵢ₋₁ = id(sitel) == 1 ? nothing : select(ψ, :between, Site(id(sitel) - 1), sitel)
+    Λᵢ₊₁ = id(siter) == nsites(ψ) ? nothing : select(ψ, :between, siter, Site(id(siter) + 1))
+
+    # do svd of the θ tensor
+    θ = select(ψ, :tensor, sitel)
+    U, s, Vt = svd(θ; left_inds, right_inds, virtualind)
+
+    # contract with the inverse of Λᵢ and Λᵢ₊₂
+    Γᵢ₋₁ =
+        isnothing(Λᵢ₋₁) ? U :
+        contract(U, Tensor(diag(pinv(Diagonal(parent(Λᵢ₋₁)), atol = 1e-32)), inds(Λᵢ₋₁)), dims = ())
+    Γᵢ =
+        isnothing(Λᵢ₊₁) ? Vt :
+        contract(Tensor(diag(pinv(Diagonal(parent(Λᵢ₊₁)), atol = 1e-32)), inds(Λᵢ₊₁)), Vt, dims = ())
+
+    delete!(TensorNetwork(ψ), θ)
+
+    push!(TensorNetwork(ψ), Γᵢ₋₁)
+    push!(TensorNetwork(ψ), s)
+    push!(TensorNetwork(ψ), Γᵢ)
+
+    return ψ
 end
 
 function expect(ψ::Chain, observables)

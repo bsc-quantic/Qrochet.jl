@@ -653,5 +653,6 @@ function overlap(::State, a::Chain, ::State, b::Chain)
     return contract(tn)
 end
 
+# TODO optimize
 overlap(a::Product, b::Chain) = overlap(convert(Chain, a), b)
 overlap(a::Chain, b::Product) = overlap(a, convert(Chain, b))

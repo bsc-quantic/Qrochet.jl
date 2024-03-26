@@ -166,7 +166,7 @@ function Grid(::Operator, ::Open, arrays::Matrix{<:AbstractArray})
 end
 
 function LinearAlgebra.transpose!(qtn::Grid)
-    old = Quantum(qtn).sitemap
+    old = Quantum(qtn).sites
     new = Dict(Site(reverse(id(site)); dual = isdual(site)) => ind for (site, ind) in old)
 
     empty!(old)

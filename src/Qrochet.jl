@@ -25,6 +25,10 @@ export leftindex, rightindex, isleftcanonical, isrightcanonical
 export canonize_site, canonize_site!, truncate!
 export canonize, canonize!, mixed_canonize, mixed_canonize!
 
+include("Ansatz/Grid.jl")
+export Grid
+export PEPS, pPEPS, PEPO, pPEPO
+
 export evolve!, expect, overlap
 
 # reexports from Tenet

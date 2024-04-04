@@ -9,7 +9,7 @@ using Qrochet
 end
 
 @testset "Integration tests" verbose = true begin
-    include("integration/QrochetQuacExt_test.jl")
+    include("integration/Quac_test.jl")
 end
 
 if haskey(ENV, "ENABLE_AQUA_TESTS")

@@ -83,6 +83,9 @@ Tenet.TensorNetwork(q::Quantum) = q.tn
 
 Base.copy(q::Quantum) = Quantum(copy(TensorNetwork(q)), copy(q.sites))
 
+Base.:(==)(a::Quantum, b::Quantum) = a.tn == b.tn && a.sites == b.sites
+Base.isapprox(a::Quantum, b::Quantum; kwargs...) = isapprox(a.tn, b.tn; kwargs...) && a.sites == b.sites
+
 function Base.adjoint(qtn::Quantum)
     sites = Iterators.map(qtn.sites) do (site, index)
         site' => index

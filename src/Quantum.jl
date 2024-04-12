@@ -79,6 +79,8 @@ struct Quantum
     end
 end
 
+Quantum(qtn::Quantum) = qtn
+
 Tenet.TensorNetwork(q::Quantum) = q.tn
 
 Base.copy(q::Quantum) = Quantum(copy(TensorNetwork(q)), copy(q.sites))

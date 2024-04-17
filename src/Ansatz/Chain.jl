@@ -335,7 +335,7 @@ function truncate!(qtn::Chain, bond; threshold::Union{Nothing,Real} = nothing, m
     extent = if !isnothing(maxdim)
         1:min(size(TensorNetwork(qtn), vind), maxdim)
     else
-        1:size(size(TensorNetwork(qtn), vind))
+        1:size(TensorNetwork(qtn), vind)
     end |> collect
 
     # remove 0s from spectrum

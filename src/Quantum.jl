@@ -153,7 +153,13 @@ Tenet.select(tn::Quantum, ::Val{:index}, site::Site) = tn[site]
 Tenet.select(tn::Quantum, ::Val{:tensor}, site::Site) = select(TensorNetwork(tn), :any, tn[site]) |> only
 
 function reindex!(a::Quantum, ioa, b::Quantum, iob)
-    ioa ∈ [:inputs, :outputs] || error("Invalid argument: :$ioa")
+    sitesa = if ioa === :inputs
+        inputs(a)
+    elseif ioa === :outputs
+        outputs(a)
+    else
+        error("Invalid argument: :$ioa")
+    end
 
     sitesb = if iob === :inputs
         inputs(b)
@@ -161,6 +167,10 @@ function reindex!(a::Quantum, ioa, b::Quantum, iob)
         outputs(b)
     else
         error("Invalid argument: :$iob")
+    end
+
+    if sitesa == sitesb
+        return b
     end
 
     replacements = map(sitesb) do site

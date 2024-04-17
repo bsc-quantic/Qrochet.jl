@@ -12,7 +12,7 @@ function Qrochet.Dense(gate::Gate)
     )
 end
 
-Qrochet.evolve!(qtn::Ansatz, gate::Gate) = evolve!(qtn, Qrochet.Dense(gate))
+Qrochet.evolve!(qtn::Ansatz, gate::Gate; kwargs...) = evolve!(qtn, Qrochet.Dense(gate); kwargs...)
 
 function Qrochet.Quantum(circuit::Circuit)
     n = lanes(circuit)

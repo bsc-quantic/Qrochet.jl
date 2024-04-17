@@ -2,7 +2,7 @@ struct Dense <: Ansatz
     super::Quantum
 end
 
-function Dense(::State, array::AbstractArray; sites::Vector{Site} = Site.(1:ndims(array)))
+function Dense(::State, array::AbstractArray; sites = Site.(1:ndims(array)))
     @assert ndims(array) > 0
     @assert all(>(1), size(array))
 
@@ -18,7 +18,7 @@ function Dense(::State, array::AbstractArray; sites::Vector{Site} = Site.(1:ndim
     Dense(qtn)
 end
 
-function Dense(::Operator, array::AbstractArray; sites::Vector{Site})
+function Dense(::Operator, array::AbstractArray; sites)
     @assert ndims(array) > 0
     @assert all(>(1), size(array))
     @assert length(sites) == ndims(array)

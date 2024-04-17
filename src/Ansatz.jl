@@ -30,6 +30,7 @@ for f in [
     :nlanes,
     :socket,
     :(Tenet.tensors),
+    :(Base.collect),
 ]
     @eval $f(@nospecialize tn::Ansatz) = $f(Quantum(tn))
 end

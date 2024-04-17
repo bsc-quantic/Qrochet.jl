@@ -144,7 +144,7 @@ function socket(q::Quantum)
 end
 
 # forward `TensorNetwork` methods
-for f in [:(Tenet.tensors)]
+for f in [:(Tenet.tensors), :(Base.collect)]
     @eval $f(@nospecialize tn::Quantum) = $f(TensorNetwork(tn))
 end
 

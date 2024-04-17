@@ -196,3 +196,23 @@ macro reindex!(expr)
     iob, idb = b.args
     return :((reindex!(Quantum($(esc(ida))), $(Meta.quot(ioa)), Quantum($(esc(idb))), $(Meta.quot(iob)))); $(esc(idb)))
 end
+
+Base.merge(a::Quantum, others::Quantum...) = foldl(merge, others, init = a)
+function Base.merge(a::Quantum, b::Quantum)
+    @assert issetequal(outputs(a), map(adjoint, inputs(b))) "Outputs of $a must match inputs of $b"
+
+    @reindex! outputs(a) => inputs(b)
+    tn = merge(TensorNetwork(a), TensorNetwork(b))
+
+    sites = Dict{Site,Symbol}()
+
+    for site in inputs(a)
+        sites[site] = select(a, :index, site)
+    end
+
+    for site in outputs(b)
+        sites[site] = select(b, :index, site)
+    end
+
+    Quantum(tn, sites)
+end

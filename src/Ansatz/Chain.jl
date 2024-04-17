@@ -318,7 +318,7 @@ Truncate the dimension of the virtual `bond`` of the [`Chain`](@ref) Tensor Netw
   - Either `threshold` or `maxdim` must be provided. If both are provided, `maxdim` is used.
   - The bond must contain the Schmidt coefficients, i.e. a site canonization must be performed before calling `truncate!`.
 """
-function truncate!(qtn::Chain, bond; threshold::Real = 1e-16, maxdim::Union{Nothing,Int} = nothing)
+function truncate!(qtn::Chain, bond; threshold::Union{Nothing,Real} = nothing, maxdim::Union{Nothing,Int} = nothing)
     # TODO replace for select(:between)
     vind = rightindex(qtn, bond[1])
     if vind != leftindex(qtn, bond[2])
@@ -332,13 +332,17 @@ function truncate!(qtn::Chain, bond; threshold::Real = 1e-16, maxdim::Union{Noth
     tensor = TensorNetwork(qtn)[vind]
     spectrum = parent(tensor)
 
-    extent = if isnothing(maxdim)
-        1:size(TensorNetwork(qtn), vind)
-    else
+    extent = if !isnothing(maxdim)
         1:min(size(TensorNetwork(qtn), vind), maxdim)
+    else
+        1:size(size(TensorNetwork(qtn), vind))
     end |> collect
 
     # remove 0s from spectrum
+    if isnothing(threshold)
+        threshold = 1e-16
+    end
+
     filter!(extent) do i
         abs(spectrum[i]) > threshold
     end
@@ -464,7 +468,14 @@ end
 
 Applies a local operator `gate` to the [`Chain`](@ref) tensor network.
 """
-function evolve!(qtn::Chain, gate::Dense; threshold = 1e-16, maxdim = nothing, iscanonical = false, renormalize = false)
+function evolve!(
+    qtn::Chain,
+    gate::Dense;
+    threshold = nothing,
+    maxdim = nothing,
+    iscanonical = false,
+    renormalize = false,
+)
     # check gate is a valid operator
     if !(socket(gate) isa Operator)
         throw(ArgumentError("Gate must be an operator, but got $(socket(gate))"))

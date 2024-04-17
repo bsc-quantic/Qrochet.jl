@@ -461,7 +461,14 @@ end
 
 Applies a local operator `gate` to the [`Chain`](@ref) tensor network.
 """
-function evolve!(qtn::Chain, gate::Dense; threshold = nothing, maxdim = nothing, iscanonical = false)
+function evolve!(
+    qtn::Chain,
+    gate::Dense;
+    threshold = nothing,
+    maxdim = nothing,
+    iscanonical = false,
+    renormalize = false,
+)
     # check gate is a valid operator
     if !(socket(gate) isa Operator)
         throw(ArgumentError("Gate must be an operator, but got $(socket(gate))"))
@@ -488,7 +495,7 @@ function evolve!(qtn::Chain, gate::Dense; threshold = nothing, maxdim = nothing,
         range != gate_inputs && throw(ArgumentError("Gate lanes must be contiguous"))
 
         # TODO check correctly for periodic boundary conditions
-        evolve_2site!(qtn, gate; threshold, maxdim, iscanonical = iscanonical)
+        evolve_2site!(qtn, gate; threshold, maxdim, iscanonical, renormalize)
     else
         # TODO generalize for more than 2 lanes
         throw(ArgumentError("Invalid number of lanes $(nlanes(gate)), maximum is 2"))
@@ -517,7 +524,7 @@ function evolve_1site!(qtn::Chain, gate::Dense)
 end
 
 # TODO: Maybe rename iscanonical kwarg ?
-function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical = false)
+function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical = false, renormalize = false)
     # shallow copy to avoid problems if errors in mid execution
     gate = copy(gate)
 
@@ -561,6 +568,14 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical =
     # truncate virtual index
     if any(!isnothing, [threshold, maxdim])
         truncate!(qtn, bond; threshold, maxdim)
+
+        # renormalize the bond
+        if renormalize && iscanonical
+            λ = select(qtn, :between, bond...)
+            replace!(TensorNetwork(qtn), λ => normalize(λ))
+        elseif renormalize && !iscanonical
+            normalize!(qtn, bond[1])
+        end
     end
 
     return qtn

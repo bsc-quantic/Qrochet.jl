@@ -15,6 +15,9 @@ abstract type Ansatz end
 
 Quantum(@nospecialize tn::Ansatz) = tn.super
 
+Base.:(==)(a::Ansatz, b::Ansatz) = Quantum(a) == Quantum(b)
+Base.isapprox(a::Ansatz, b::Ansatz; kwargs...) = isapprox(Quantum(a), Quantum(b); kwargs...)
+
 # TODO forward `Quantum` methods
 for f in [
     :(Tenet.TensorNetwork),

@@ -11,7 +11,7 @@ using Tenet
 # WARN type-piracy
 @non_differentiable Base.setdiff(::Vector{Symbol}, ::Base.ValueIterator)
 
-ChainRulesCore.ProjectTo(qtn::Quantum) = ProjectTo{Quantum}(; tn = ProjectTo(qtn.tn))
+ChainRulesCore.ProjectTo(x::Quantum) = ProjectTo{Quantum}(; tn = ProjectTo(TensorNetwork(x)))
 (projector::ProjectTo{Quantum})(Δ) = Quantum(projector.tn(Δ.tn), Δ.sites)
 
 function ChainRulesCore.frule((_, ẋ, _), ::Type{Quantum}, x::TensorNetwork, sites)

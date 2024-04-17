@@ -1,12 +1,13 @@
 module QrochetChainRulesTestUtilsExt
 
 using Qrochet
+using Tenet
 using ChainRulesCore
 using ChainRulesTestUtils
 using Random
 
 function ChainRulesTestUtils.rand_tangent(rng::AbstractRNG, x::Quantum)
-    return Tangent{Quantum}(; tn = rand_tangent(rng, x.tn), sites = NoTangent())
+    return Tangent{Quantum}(; tn = rand_tangent(rng, TensorNetwork(x)), sites = NoTangent())
 end
 
 # WARN type-piracy

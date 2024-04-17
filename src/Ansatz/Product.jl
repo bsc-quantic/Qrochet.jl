@@ -3,14 +3,17 @@ using LinearAlgebra
 
 struct Product <: Ansatz
     super::Quantum
-
-    function Product(tn::TensorNetwork, sites)
-        @assert isempty(inds(tn, set = :inner)) "Product ansatz must not have inner indices"
-        new(Quantum(tn, sites))
-    end
 end
 
-function Product(arrays::Vector{<:Vector})
+function Product(tn::TensorNetwork, sites)
+    @assert isempty(inds(tn, set = :inner)) "Product ansatz must not have inner indices"
+    Product(Quantum(tn, sites))
+end
+
+Product(arrays::Vector{<:AbstractVector}) = Product(State(), Open(), arrays)
+Product(arrays::Vector{<:AbstractMatrix}) = Product(Operator(), Open(), arrays)
+
+function Product(::State, ::Open, arrays)
     symbols = [nextindex() for _ in 1:length(arrays)]
     _tensors = map(enumerate(arrays)) do (i, array)
         Tensor(array, [symbols[i]])
@@ -21,7 +24,7 @@ function Product(arrays::Vector{<:Vector})
     Product(TensorNetwork(_tensors), sitemap)
 end
 
-function Product(arrays::Vector{<:Matrix})
+function Product(::Operator, ::Open, arrays)
     n = length(arrays)
     symbols = [nextindex() for _ in 1:2*length(arrays)]
     _tensors = map(enumerate(arrays)) do (i, array)

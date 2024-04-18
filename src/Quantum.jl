@@ -1,15 +1,12 @@
 using Tenet
 using ValSplit
 
+# TODO Should we store here some information about quantum numbers?
 """
     Site(id[, dual = false])
-    site"id"
+    site"i,j,..."
 
 Represents a physical index.
-
-# Unresolved questions
-
-  - Should we store here some information about quantum numbers?
 """
 struct Site{N}
     id::NTuple{N,Int}
@@ -81,6 +78,11 @@ end
 
 Quantum(qtn::Quantum) = qtn
 
+"""
+    TensorNetwork(q::Quantum)
+
+Returns the underlying `TensorNetwork` of a [`Quantum`](@ref) Tensor Network.
+"""
 Tenet.TensorNetwork(q::Quantum) = q.tn
 
 Base.copy(q::Quantum) = Quantum(copy(TensorNetwork(q)), copy(q.sites))
@@ -88,6 +90,11 @@ Base.copy(q::Quantum) = Quantum(copy(TensorNetwork(q)), copy(q.sites))
 Base.:(==)(a::Quantum, b::Quantum) = a.tn == b.tn && a.sites == b.sites
 Base.isapprox(a::Quantum, b::Quantum; kwargs...) = isapprox(a.tn, b.tn; kwargs...) && a.sites == b.sites
 
+"""
+    adjoint(q::Quantum)
+
+Returns the adjoint of a [`Quantum`](@ref) Tensor Network; i.e. the conjugate Tensor Network with the inputs and outputs swapped.
+"""
 function Base.adjoint(qtn::Quantum)
     sites = Iterators.map(qtn.sites) do (site, index)
         site' => index
@@ -105,31 +112,109 @@ function Base.adjoint(qtn::Quantum)
     Quantum(tn, sites)
 end
 
+"""
+    ninputs(q::Quantum)
+
+Returns the number of input sites of a [`Quantum`](@ref) Tensor Network.
+"""
 ninputs(q::Quantum) = count(isdual, keys(q.sites))
+
+"""
+    noutputs(q::Quantum)
+
+Returns the number of output sites of a [`Quantum`](@ref) Tensor Network.
+"""
 noutputs(q::Quantum) = count(!isdual, keys(q.sites))
 
+"""
+    inputs(q::Quantum)
+
+Returns the input sites of a [`Quantum`](@ref) Tensor Network.
+"""
 inputs(q::Quantum) = sort!(filter(isdual, keys(q.sites)) |> collect)
+
+"""
+    outputs(q::Quantum)
+
+Returns the output sites of a [`Quantum`](@ref) Tensor Network.
+"""
 outputs(q::Quantum) = sort!(filter(!isdual, keys(q.sites)) |> collect)
 
 Base.summary(io::IO, q::Quantum) = print(io, "$(length(q.tn.tensormap))-tensors Quantum")
 Base.show(io::IO, q::Quantum) = print(io, "Quantum (inputs=$(ninputs(q)), outputs=$(noutputs(q)))")
 
+"""
+    sites(q::Quantum)
+
+Returns the sites of a [`Quantum`](@ref) Tensor Network.
+"""
 sites(tn::Quantum) = collect(keys(tn.sites))
+
+"""
+    nsites(q::Quantum)
+
+Returns the number of sites of a [`Quantum`](@ref) Tensor Network.
+"""
 nsites(tn::Quantum) = length(tn.sites)
+
+"""
+    lanes(q::Quantum)
+
+Returns the lanes of a [`Quantum`](@ref) Tensor Network.
+"""
 lanes(tn::Quantum) = unique(Iterators.map(Iterators.flatten([inputs(tn), outputs(tn)])) do site
     isdual(site) ? site' : site
 end)
+
+"""
+    nlanes(q::Quantum)
+
+Returns the number of lanes of a [`Quantum`](@ref) Tensor Network.
+"""
 nlanes(tn::Quantum) = length(lanes(tn))
 
+"""
+    getindex(q::Quantum, site::Site)
+
+Returns the index associated with a site in a [`Quantum`](@ref) Tensor Network.
+"""
 Base.getindex(q::Quantum, site::Site) = q.sites[site]
 
+"""
+    Socket
+
+Abstract type representing the socket of a [`Quantum`](@ref) Tensor Network.
+"""
 abstract type Socket end
+
+"""
+    Scalar <: Socket
+
+Socket representing a scalar; i.e. a Tensor Network with no open sites.
+"""
 struct Scalar <: Socket end
+
+"""
+    State <: Socket
+
+Socket representing a state; i.e. a Tensor Network with only input sites (or only output sites if `dual = true`).
+"""
 Base.@kwdef struct State <: Socket
     dual::Bool = false
 end
+
+"""
+    Operator <: Socket
+
+Socket representing an operator; i.e. a Tensor Network with both input and output sites.
+"""
 struct Operator <: Socket end
 
+"""
+    socket(q::Quantum)
+
+Returns the socket of a [`Quantum`](@ref) Tensor Network; i.e. whether it is a [`Scalar`](@ref), [`State`](@ref) or [`Operator`](@ref).
+"""
 function socket(q::Quantum)
     _sites = sites(q)
     if isempty(_sites)
@@ -149,7 +234,19 @@ for f in [:(Tenet.tensors), :(Base.collect)]
 end
 
 @valsplit 2 Tenet.select(tn::Quantum, query::Symbol, args...) = error("Query ':$query' not defined")
+
+"""
+    select(q::Quantum, :index, site::Site)
+
+Selects the index associated with a site in a [`Quantum`](@ref) Tensor Network.
+"""
 Tenet.select(tn::Quantum, ::Val{:index}, site::Site) = tn[site]
+
+"""
+    select(q::Quantum, :tensor, site::Site)
+
+Selects the tensor associated with a site in a [`Quantum`](@ref) Tensor Network.
+"""
 Tenet.select(tn::Quantum, ::Val{:tensor}, site::Site) = select(TensorNetwork(tn), :any, tn[site]) |> only
 
 function reindex!(a::Quantum, ioa, b::Quantum, iob)
@@ -180,6 +277,11 @@ function reindex!(a::Quantum, ioa, b::Quantum, iob)
     b
 end
 
+"""
+    @reindex! a => b
+
+Reindexes the input/output sites of a [`Quantum`](@ref) Tensor Network `b` to match the input/output sites of another [`Quantum`](@ref) Tensor Network `a`.
+"""
 macro reindex!(expr)
     @assert Meta.isexpr(expr, :call) && expr.args[1] == :(=>)
     Base.remove_linenums!(expr)
@@ -192,6 +294,11 @@ macro reindex!(expr)
     return :((reindex!(Quantum($(esc(ida))), $(Meta.quot(ioa)), Quantum($(esc(idb))), $(Meta.quot(iob)))); $(esc(idb)))
 end
 
+"""
+    merge(a::Quantum, b::Quantum...)
+
+Merges multiple [`Quantum`](@ref) Tensor Networks into a single one by connecting input/output sites.
+"""
 Base.merge(a::Quantum, others::Quantum...) = foldl(merge, others, init = a)
 function Base.merge(a::Quantum, b::Quantum)
     @assert issetequal(outputs(a), map(adjoint, inputs(b))) "Outputs of $a must match inputs of $b"

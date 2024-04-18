@@ -1,0 +1,31 @@
+name: Documenter
+on:
+  push:
+    branches: [master]
+    tags: [v*]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  Documenter:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add Julia registries
+        run: |
+          using Pkg
+          pkg"registry add https://github.com/bsc-quantic/Registry.git"
+          pkg"registry add General"
+        shell: julia {0}
+      - uses: julia-actions/julia-docdeploy@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

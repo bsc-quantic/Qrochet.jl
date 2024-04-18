@@ -6,16 +6,16 @@ Pkg.instantiate()
 using Documenter
 using Qrochet
 
-DocMeta.setdocmeta!(Tenet, :DocTestSetup, :(using Qrochet); recursive = true)
+DocMeta.setdocmeta!(Qrochet, :DocTestSetup, :(using Qrochet); recursive = true)
 
 makedocs(
     modules = [Qrochet],
-    sitename = "Tenet.jl",
+    sitename = "Qrochet.jl",
     authors = "Sergio Sánchez Ramírez and contributors",
     pages = Any[
         "Home"=>"index.md",
-        "Matrix Product States (MPS)"=>"quantum/mps.md",
-        "Projected Entangled Pair States (PEPS)"=>"quantum/peps.md",
+        "Quantum"=>"quantum.md",
+        "Ansatzes"=>["`Product` ansatz" => "ansatz/product.md", "`Chain` ansatz" => "ansatz/chain.md"],
     ],
     format = Documenter.HTML(prettyurls = false, assets = ["assets/youtube.css"]),
     plugins = [],

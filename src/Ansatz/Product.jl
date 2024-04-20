@@ -5,6 +5,11 @@ struct Product <: Ansatz
     super::Quantum
 end
 
+Base.copy(x::Product) = Product(copy(Quantum(x)))
+
+Base.similar(x::Product) = Product(similar(Quantum(x)))
+Base.zero(x::Product) = Product(zero(Quantum(x)))
+
 function Product(tn::TensorNetwork, sites)
     @assert isempty(inds(tn, set = :inner)) "Product ansatz must not have inner indices"
     Product(Quantum(tn, sites))

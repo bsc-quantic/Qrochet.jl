@@ -10,6 +10,9 @@ end
 
 Base.copy(tn::Chain) = Chain(copy(Quantum(tn)), boundary(tn))
 
+Base.similar(tn::Chain) = Chain(similar(Quantum(tn)), boundary(tn))
+Base.zero(tn::Chain) = Chain(zero(Quantum(tn)), boundary(tn))
+
 boundary(tn::Chain) = tn.boundary
 
 MPS(arrays) = Chain(State(), Open(), arrays)

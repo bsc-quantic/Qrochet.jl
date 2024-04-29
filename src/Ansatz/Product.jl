@@ -51,7 +51,7 @@ end
 LinearAlgebra.opnorm(tn::Product, p::Real = 2) = LinearAlgebra.opnorm(socket(tn), tn, p)
 function LinearAlgebra.opnorm(::Operator, tn::Product, p::Real)
     mapreduce(*, tensors(tn)) do tensor
-        opnorm(tensor, p)
+        opnorm(parent(tensor), p)
     end^(1 // p)
 end
 

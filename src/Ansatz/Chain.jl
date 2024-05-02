@@ -685,6 +685,7 @@ function evolve(ψ::Chain, mpo::Chain)
         push!(updated_tensors, t)
 
         if i < L
+            d = size(TensorNetwork(mpo), rightindex(mpo, Site(i)))
             Λᵢ = select(ψ, :between, Site(i), Site(i + 1))
             Λᵢ = Tensor(diag(kron(Matrix(LinearAlgebra.I, d, d), diagm(parent(Λᵢ)))), inds(Λᵢ))
             push!(Λ, Λᵢ)

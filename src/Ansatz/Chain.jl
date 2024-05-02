@@ -663,7 +663,7 @@ function evolve(ψ::Chain, mpo::Chain)
     L = nsites(ψ)
 
     for i in 1:L
-        t = contract(select(ψ, :tensor, Site(i)), select(mpo, :tensor, Site(i)); dims=(select(ψ, :index, Site(i)),))
+        t = contract(select(ψ, :tensor, Site(i)), select(mpo, :tensor, Site(i)); dims = (select(ψ, :index, Site(i)),))
         physicalind = select(mpo, :index, Site(i))
 
         # Fuse the two right legs of t into one
@@ -671,7 +671,13 @@ function evolve(ψ::Chain, mpo::Chain)
             wanted_inds = (physicalind, rightindex(ψ, Site(i)), rightindex(mpo, Site(i)))
             new_inds = (physicalind, rightindex(ψ, Site(i)))
         elseif i < L
-            wanted_inds = (physicalind, leftindex(ψ, Site(i)), leftindex(mpo, Site(i)), rightindex(ψ, Site(i)), rightindex(mpo, Site(i)))
+            wanted_inds = (
+                physicalind,
+                leftindex(ψ, Site(i)),
+                leftindex(mpo, Site(i)),
+                rightindex(ψ, Site(i)),
+                rightindex(mpo, Site(i)),
+            )
             new_inds = (physicalind, leftindex(ψ, Site(i)), rightindex(ψ, Site(i)))
         else
             wanted_inds = (physicalind, leftindex(ψ, Site(i)), leftindex(mpo, Site(i)))
@@ -681,7 +687,10 @@ function evolve(ψ::Chain, mpo::Chain)
         perm = Tenet.__find_index_permutation(wanted_inds, inds(t))
         t = PermutedDimsArray(parent(t), perm)
 
-        t = Tensor(reshape(t, tuple(size(t, 1), [size(t, k) * size(t, k + 1) for k in 2:2:length(wanted_inds)]...)), new_inds)
+        t = Tensor(
+            reshape(t, tuple(size(t, 1), [size(t, k) * size(t, k + 1) for k in 2:2:length(wanted_inds)]...)),
+            new_inds,
+        )
         push!(updated_tensors, t)
 
         if i < L

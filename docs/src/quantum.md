@@ -11,8 +11,8 @@ nsites
 ## Queries
 
 ```@docs
-Tenet.select(::Quantum, ::Val{:index}, ::Site)
-Tenet.select(::Quantum, ::Val{:tensor}, ::Site)
+Tenet.inds(::Quantum; kwargs...)
+Tenet.tensors(::Quantum; kwargs...)
 ```
 
 ## Connecting `Quantum` Tensor Networks

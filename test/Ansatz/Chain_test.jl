@@ -66,7 +66,7 @@
         @test size(TensorNetwork(truncated), rightindex(truncated, Site(2))) == 1
         @test size(TensorNetwork(truncated), leftindex(truncated, Site(3))) == 1
 
-        singular_values = select(qtn, :between, Site(2), Site(3))
+        singular_values = tensors(qtn; between = (Site(2), Site(3)))
         truncated = Qrochet.truncate(qtn, [Site(2), Site(3)]; threshold = singular_values[2] + 0.1)
         @test size(TensorNetwork(truncated), rightindex(truncated, Site(2))) == 1
         @test size(TensorNetwork(truncated), leftindex(truncated, Site(3))) == 1
@@ -117,10 +117,10 @@
 
             for i in 1:4
                 contract_some = contract(canonized, :between, Site(i), Site(i + 1))
-                Bᵢ = select(contract_some, :tensor, Site(i))
+                Bᵢ = tensors(contract_some; at = Site(i))
 
                 @test isapprox(contract(TensorNetwork(contract_some)), contract(TensorNetwork(qtn)))
-                @test_throws ArgumentError select(contract_some, :between, Site(i), Site(i + 1))
+                @test_throws MethodError tensors(contract_some, :between, Site(i), Site(i + 1))
 
                 @test isrightcanonical(contract_some, Site(i))
                 @test isleftcanonical(
@@ -128,8 +128,8 @@
                     Site(i + 1),
                 )
 
-                Γᵢ = select(canonized, :tensor, Site(i))
-                Λᵢ₊₁ = select(canonized, :between, Site(i), Site(i + 1))
+                Γᵢ = tensors(canonized; at = Site(i))
+                Λᵢ₊₁ = tensors(canonized; between = (Site(i), Site(i + 1)))
                 @test Bᵢ ≈ contract(Γᵢ, Λᵢ₊₁; dims = ())
             end
         end
@@ -144,28 +144,28 @@
                 canonized = canonize_site(qtn, site"1"; direction = :right, method = method)
                 @test isleftcanonical(canonized, site"1")
                 @test isapprox(
-                    contract(transform(TensorNetwork(canonized), Tenet.HyperindConverter())),
+                    contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())),
                     contract(TensorNetwork(qtn)),
                 )
 
                 canonized = canonize_site(qtn, site"2"; direction = :right, method = method)
                 @test isleftcanonical(canonized, site"2")
                 @test isapprox(
-                    contract(transform(TensorNetwork(canonized), Tenet.HyperindConverter())),
+                    contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())),
                     contract(TensorNetwork(qtn)),
                 )
 
                 canonized = canonize_site(qtn, site"2"; direction = :left, method = method)
                 @test isrightcanonical(canonized, site"2")
                 @test isapprox(
-                    contract(transform(TensorNetwork(canonized), Tenet.HyperindConverter())),
+                    contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())),
                     contract(TensorNetwork(qtn)),
                 )
 
                 canonized = canonize_site(qtn, site"3"; direction = :left, method = method)
                 @test isrightcanonical(canonized, site"3")
                 @test isapprox(
-                    contract(transform(TensorNetwork(canonized), Tenet.HyperindConverter())),
+                    contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())),
                     contract(TensorNetwork(qtn)),
                 )
             end
@@ -182,13 +182,13 @@
 
             @test length(tensors(canonized)) == 9 # 5 tensors + 4 singular values vectors
             @test isapprox(
-                contract(transform(TensorNetwork(canonized), Tenet.HyperindConverter())),
+                contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())),
                 contract(TensorNetwork(qtn)),
             )
             @test isapprox(norm(qtn), norm(canonized))
 
             # Extract the singular values between each adjacent pair of sites in the canonized chain
-            Λ = [select(canonized, :between, Site(i), Site(i + 1)) for i in 1:4]
+            Λ = [tensors(canonized; between = (Site(i), Site(i + 1))) for i in 1:4]
             @test map(λ -> sum(abs2, λ), Λ) ≈ ones(length(Λ)) * norm(canonized)^2
 
             for i in 1:5
@@ -198,7 +198,7 @@
                     @test isleftcanonical(canonized, Site(i))
                 elseif i == 5 # in the limits of the chain, we get the norm of the state
                     contract!(canonized, :between, Site(i - 1), Site(i); direction = :right)
-                    tensor = select(canonized, :tensor, Site(i))
+                    tensor = tensors(canonized; at = Site(i))
                     replace!(TensorNetwork(canonized), tensor => tensor / norm(canonized))
                     @test isleftcanonical(canonized, Site(i))
                 else
@@ -212,7 +212,7 @@
 
                 if i == 1 # in the limits of the chain, we get the norm of the state
                     contract!(canonized, :between, Site(i), Site(i + 1); direction = :left)
-                    tensor = select(canonized, :tensor, Site(i))
+                    tensor = tensors(canonized; at = Site(i))
                     replace!(TensorNetwork(canonized), tensor => tensor / norm(canonized))
                     @test isrightcanonical(canonized, Site(i))
                 elseif i == 5
@@ -235,7 +235,7 @@
             @test isrightcanonical(canonized, Site(5))
 
             @test isapprox(
-                contract(transform(TensorNetwork(canonized), Tenet.HyperindConverter())),
+                contract(transform(TensorNetwork(canonized), Tenet.HyperFlatten())),
                 contract(TensorNetwork(qtn)),
             )
         end

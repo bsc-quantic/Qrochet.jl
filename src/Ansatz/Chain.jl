@@ -129,11 +129,11 @@ rightsite(::Periodic, tn::Chain, site::Site) = Site(mod1(id(site) + 1, nlanes(tn
 
 leftindex(tn::Chain, site::Site) = leftindex(boundary(tn), tn, site)
 leftindex(::Open, tn::Chain, site::Site) = site == site"1" ? nothing : leftindex(Periodic(), tn, site)
-leftindex(::Periodic, tn::Chain, site::Site) = select(tn, :bond, site, leftsite(tn, site))
+leftindex(::Periodic, tn::Chain, site::Site) = inds(tn; bond = (site, leftsite(tn, site)))
 
 rightindex(tn::Chain, site::Site) = rightindex(boundary(tn), tn, site)
 rightindex(::Open, tn::Chain, site::Site) = site == Site(nlanes(tn)) ? nothing : rightindex(Periodic(), tn, site)
-rightindex(::Periodic, tn::Chain, site::Site) = select(tn, :bond, site, rightsite(tn, site))
+rightindex(::Periodic, tn::Chain, site::Site) = inds(tn; bond = (site, rightsite(tn, site)))
 
 Base.adjoint(chain::Chain) = Chain(adjoint(Quantum(chain)), boundary(chain))
 
@@ -248,14 +248,14 @@ function Tenet.contract!(
     direction::Symbol = :left,
     delete_Λ = true,
 )
-    Λᵢ = select(tn, :between, site1, site2)
+    Λᵢ = tensors(tn; between = (site1, site2))
     Λᵢ === nothing && return tn
 
     if direction === :right
-        Γᵢ₊₁ = select(tn, :tensor, site2)
+        Γᵢ₊₁ = tensors(tn; at = site2)
         replace!(TensorNetwork(tn), Γᵢ₊₁ => contract(Γᵢ₊₁, Λᵢ, dims = ()))
     elseif direction === :left
-        Γᵢ = select(tn, :tensor, site1)
+        Γᵢ = tensors(tn; at = site1)
         replace!(TensorNetwork(tn), Γᵢ => contract(Λᵢ, Γᵢ, dims = ()))
     else
         throw(ArgumentError("Unknown direction=:$direction"))
@@ -322,13 +322,13 @@ Truncate the dimension of the virtual `bond`` of the [`Chain`](@ref) Tensor Netw
   - The bond must contain the Schmidt coefficients, i.e. a site canonization must be performed before calling `truncate!`.
 """
 function truncate!(qtn::Chain, bond; threshold::Union{Nothing,Real} = nothing, maxdim::Union{Nothing,Int} = nothing)
-    # TODO replace for select(:between)
+    # TODO replace for tensors(; between)
     vind = rightindex(qtn, bond[1])
     if vind != leftindex(qtn, bond[2])
         throw(ArgumentError("Invalid bond $bond"))
     end
 
-    if vind ∉ inds(TensorNetwork(qtn), :hyper)
+    if vind ∉ inds(qtn; set = :hyper)
         throw(MissingSchmidtCoefficientsException(bond))
     end
 
@@ -357,7 +357,7 @@ end
 
 function isleftcanonical(qtn::Chain, site; atol::Real = 1e-12)
     right_ind = rightindex(qtn, site)
-    tensor = select(qtn, :tensor, site)
+    tensor = tensors(qtn; at = site)
 
     # we are at right-most site, we need to add an extra dummy dimension to the tensor
     if isnothing(right_ind)
@@ -375,7 +375,7 @@ end
 
 function isrightcanonical(qtn::Chain, site; atol::Real = 1e-12)
     left_ind = leftindex(qtn, site)
-    tensor = select(qtn, :tensor, site)
+    tensor = tensors(qtn; at = site)
 
     # we are at left-most site, we need to add an extra dummy dimension to the tensor
     if isnothing(left_ind)
@@ -413,15 +413,15 @@ function canonize!(::Open, tn::Chain)
         canonize_site!(tn, Site(i); direction = :right, method = :svd)
 
         # extract the singular values and contract them with the next tensor
-        Λᵢ = pop!(TensorNetwork(tn), select(tn, :between, Site(i), Site(i + 1)))
-        Aᵢ₊₁ = select(tn, :tensor, Site(i + 1))
+        Λᵢ = pop!(TensorNetwork(tn), tensors(tn; between = (Site(i), Site(i + 1))))
+        Aᵢ₊₁ = tensors(tn; at = Site(i + 1))
         replace!(TensorNetwork(tn), Aᵢ₊₁ => contract(Aᵢ₊₁, Λᵢ, dims = ()))
         push!(Λ, Λᵢ)
     end
 
     for i in 2:nsites(tn) # tensors at i in "A" form, need to contract (Λᵢ)⁻¹ with A to get Γᵢ
         Λᵢ = Λ[i-1] # singular values start between site 1 and 2
-        A = select(tn, :tensor, Site(i))
+        A = tensors(tn; at = Site(i))
         Γᵢ = contract(A, Tensor(diag(pinv(Diagonal(parent(Λᵢ)), atol = 1e-64)), inds(Λᵢ)), dims = ())
         replace!(TensorNetwork(tn), A => Γᵢ)
         push!(TensorNetwork(tn), Λᵢ)
@@ -462,7 +462,7 @@ to mixed-canonized form with the given center site.
 """
 function LinearAlgebra.normalize!(tn::Chain, root::Site; p::Real = 2)
     mixed_canonize!(tn, root)
-    normalize!(select(Quantum(tn), :tensor, root), p)
+    normalize!(tensors(Quantum(tn); at = root), p)
     return tn
 end
 
@@ -522,11 +522,11 @@ function evolve_1site!(qtn::Chain, gate::Dense)
     targetsite = only(inputs(gate))'
 
     # reindex contracting index
-    replace!(TensorNetwork(qtn), select(qtn, :index, targetsite) => contracting_index)
-    replace!(TensorNetwork(gate), select(gate, :index, targetsite') => contracting_index)
+    replace!(TensorNetwork(qtn), inds(qtn; at = targetsite) => contracting_index)
+    replace!(TensorNetwork(gate), inds(gate; at = targetsite') => contracting_index)
 
     # reindex output of gate to match TN sitemap
-    replace!(TensorNetwork(gate), select(gate, :index, only(outputs(gate))) => select(qtn, :index, targetsite))
+    replace!(TensorNetwork(gate), inds(gate; at = only(outputs(gate))) => inds(qtn; at = targetsite))
 
     # contract gate with TN
     merge!(TensorNetwork(qtn), TensorNetwork(gate))
@@ -542,23 +542,23 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical =
     left_inds::Vector{Symbol} = !isnothing(leftindex(qtn, sitel)) ? [leftindex(qtn, sitel)] : Symbol[]
     right_inds::Vector{Symbol} = !isnothing(rightindex(qtn, siter)) ? [rightindex(qtn, siter)] : Symbol[]
 
-    virtualind::Symbol = select(qtn, :bond, bond...)
+    virtualind::Symbol = inds(qtn, :bond, bond...)
 
     iscanonical ? contract_2sitewf!(qtn, bond) : contract!(TensorNetwork(qtn), virtualind)
 
     # reindex contracting index
     contracting_inds = [gensym(:tmp) for _ in inputs(gate)]
     replace!(TensorNetwork(qtn), map(zip(inputs(gate), contracting_inds)) do (site, contracting_index)
-        select(qtn, :index, site') => contracting_index
+        inds(qtn; at = site') => contracting_index
     end)
     replace!(TensorNetwork(gate), map(zip(inputs(gate), contracting_inds)) do (site, contracting_index)
-        select(gate, :index, site) => contracting_index
+        inds(gate; at = site) => contracting_index
     end)
 
     # reindex output of gate to match TN sitemap
     for site in outputs(gate)
-        if select(qtn, :index, site) != select(gate, :index, site)
-            replace!(TensorNetwork(gate), select(gate, :index, site) => select(qtn, :index, site))
+        if inds(qtn; at = site) != inds(gate; at = site)
+            replace!(TensorNetwork(gate), inds(gate; at = site) => inds(qtn; at = site))
         end
     end
 
@@ -567,8 +567,8 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical =
     contract!(TensorNetwork(qtn), contracting_inds)
 
     # decompose using SVD
-    push!(left_inds, select(qtn, :index, sitel))
-    push!(right_inds, select(qtn, :index, siter))
+    push!(left_inds, inds(qtn; at = sitel))
+    push!(right_inds, inds(qtn; at = siter))
 
     if iscanonical
         unpack_2sitewf!(qtn, bond, left_inds, right_inds, virtualind)
@@ -581,7 +581,7 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical =
 
         # renormalize the bond
         if renormalize && iscanonical
-            λ = select(qtn, :between, bond...)
+            λ = tensors(qtn; between = bond)
             replace!(TensorNetwork(qtn), λ => normalize(λ))
         elseif renormalize && !iscanonical
             normalize!(qtn, bond[1])
@@ -604,13 +604,13 @@ function contract_2sitewf!(ψ::Chain, bond)
     (0 < id(sitel) < nsites(ψ) || 0 < id(siter) < nsites(ψ)) ||
         throw(ArgumentError("The sites in the bond must be between 1 and $(nsites(ψ))"))
 
-    Λᵢ₋₁ = id(sitel) == 1 ? nothing : select(ψ, :between, Site(id(sitel) - 1), sitel)
-    Λᵢ₊₁ = id(sitel) == nsites(ψ) - 1 ? nothing : select(ψ, :between, siter, Site(id(siter) + 1))
+    Λᵢ₋₁ = id(sitel) == 1 ? nothing : tensors(ψ; between = (Site(id(sitel) - 1), sitel))
+    Λᵢ₊₁ = id(sitel) == nsites(ψ) - 1 ? nothing : tensors(ψ; between = (siter, Site(id(siter) + 1)))
 
     !isnothing(Λᵢ₋₁) && contract!(ψ, :between, Site(id(sitel) - 1), sitel; direction = :right, delete_Λ = false)
     !isnothing(Λᵢ₊₁) && contract!(ψ, :between, siter, Site(id(siter) + 1); direction = :left, delete_Λ = false)
 
-    contract!(TensorNetwork(ψ), select(ψ, :bond, bond...))
+    contract!(TensorNetwork(ψ), inds(ψ, :bond, bond...))
 
     return ψ
 end
@@ -628,11 +628,11 @@ function unpack_2sitewf!(ψ::Chain, bond, left_inds, right_inds, virtualind)
     (0 < id(sitel) < nsites(ψ) || 0 < id(site_r) < nsites(ψ)) ||
         throw(ArgumentError("The sites in the bond must be between 1 and $(nsites(ψ))"))
 
-    Λᵢ₋₁ = id(sitel) == 1 ? nothing : select(ψ, :between, Site(id(sitel) - 1), sitel)
-    Λᵢ₊₁ = id(siter) == nsites(ψ) ? nothing : select(ψ, :between, siter, Site(id(siter) + 1))
+    Λᵢ₋₁ = id(sitel) == 1 ? nothing : tensors(ψ; between = (Site(id(sitel) - 1), sitel))
+    Λᵢ₊₁ = id(siter) == nsites(ψ) ? nothing : tensors(ψ; between = (siter, Site(id(siter) + 1)))
 
     # do svd of the θ tensor
-    θ = select(ψ, :tensor, sitel)
+    θ = tensors(ψ; at = sitel)
     U, s, Vt = svd(θ; left_inds, right_inds, virtualind)
 
     # contract with the inverse of Λᵢ and Λᵢ₊₂

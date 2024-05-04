@@ -1,5 +1,4 @@
 using Tenet
-using ValSplit
 
 # TODO Should we store here some information about quantum numbers?
 """
@@ -181,7 +180,7 @@ nlanes(tn::Quantum) = length(lanes(tn))
 
 Returns the index associated with a site in a [`Quantum`](@ref) Tensor Network.
 """
-Base.getindex(q::Quantum, site::Site) = q.sites[site]
+Base.getindex(q::Quantum, site::Site) = inds(q; at = site)
 
 """
     Socket
@@ -232,25 +231,43 @@ function socket(q::Quantum)
 end
 
 # forward `TensorNetwork` methods
-for f in [:(Tenet.tensors), :(Tenet.arrays), :(Base.collect)]
+for f in [:(Tenet.arrays), :(Base.collect)]
     @eval $f(@nospecialize tn::Quantum) = $f(TensorNetwork(tn))
 end
 
-@valsplit 2 Tenet.select(tn::Quantum, query::Symbol, args...) = error("Query ':$query' not defined")
+"""
+    inds(tn::Quantum, set::Symbol = :all, args...; kwargs...)
+
+Options:
+
+  - `:at`: index at a site
+"""
+function Tenet.inds(tn::Quantum; kwargs...)
+    if keys(kwargs) === (:at,)
+        inds(tn, Val(:at), kwargs[:at])
+    else
+        inds(TensorNetwork(tn); kwargs...)
+    end
+end
+
+Tenet.inds(tn::Quantum, ::Val{:at}, site::Site) = tn.sites[site]
 
 """
-    select(q::Quantum, :index, site::Site)
+    tensors(tn::Quantum, query::Symbol, args...; kwargs...)
 
-Selects the index associated with a site in a [`Quantum`](@ref) Tensor Network.
-"""
-Tenet.select(tn::Quantum, ::Val{:index}, site::Site) = tn[site]
+Options:
 
+  - `:at`: tensor at a site
 """
-    select(q::Quantum, :tensor, site::Site)
+function Tenet.tensors(tn::Quantum; kwargs...)
+    if keys(kwargs) === (:at,)
+        tensors(tn, Val(:at), kwargs[:at])
+    else
+        tensors(TensorNetwork(tn); kwargs...)
+    end
+end
 
-Selects the tensor associated with a site in a [`Quantum`](@ref) Tensor Network.
-"""
-Tenet.select(tn::Quantum, ::Val{:tensor}, site::Site) = select(TensorNetwork(tn), :any, tn[site]) |> only
+Tenet.tensors(tn::Quantum, ::Val{:at}, site::Site) = only(tensors(tn; intersects = inds(tn; at = site)))
 
 function reindex!(a::Quantum, ioa, b::Quantum, iob)
     ioa ∈ [:inputs, :outputs] || error("Invalid argument: :$ioa")
@@ -264,7 +281,7 @@ function reindex!(a::Quantum, ioa, b::Quantum, iob)
     end
 
     replacements = map(sitesb) do site
-        select(b, :index, site) => select(a, :index, ioa != iob ? site' : site)
+        inds(b; at = site) => inds(a; at = ioa != iob ? site' : site)
     end
 
     if issetequal(first.(replacements), last.(replacements))
@@ -274,7 +291,7 @@ function reindex!(a::Quantum, ioa, b::Quantum, iob)
     replace!(TensorNetwork(b), replacements...)
 
     for site in sitesb
-        b.sites[site] = select(a, :index, ioa != iob ? site' : site)
+        b.sites[site] = inds(a; at = ioa != iob ? site' : site)
     end
 
     b
@@ -312,11 +329,11 @@ function Base.merge(a::Quantum, b::Quantum)
     sites = Dict{Site,Symbol}()
 
     for site in inputs(a)
-        sites[site] = select(a, :index, site)
+        sites[site] = inds(a; at = site)
     end
 
     for site in outputs(b)
-        sites[site] = select(b, :index, site)
+        sites[site] = inds(b; at = site)
     end
 
     Quantum(tn, sites)

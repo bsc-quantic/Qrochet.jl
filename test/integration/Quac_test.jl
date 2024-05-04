@@ -13,11 +13,11 @@
 
         # all open indices are sites
         siteinds = getindex.((qftqtn,), sites(qftqtn))
-        @test issetequal(inds(TensorNetwork(qftqtn), :open), siteinds)
+        @test issetequal(inds(TensorNetwork(qftqtn); set = :open), siteinds)
 
         # all inner indices are not sites
         # TODO too strict condition. remove?
         notsiteinds = setdiff(inds(TensorNetwork(qftqtn)), siteinds)
-        @test_skip issetequal(inds(TensorNetwork(qftqtn), :inner), notsiteinds)
+        @test_skip issetequal(inds(TensorNetwork(qftqtn); set = :inner), notsiteinds)
     end
 end

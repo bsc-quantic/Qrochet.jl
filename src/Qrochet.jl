@@ -33,6 +33,6 @@ export evolve!, expect, overlap
 
 # reexports from Tenet
 using Tenet
-export select
+export inds, tensors, arrays
 
 end

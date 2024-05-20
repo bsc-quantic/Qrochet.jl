@@ -24,7 +24,6 @@ for f in [
     :noutputs,
     :inputs,
     :outputs,
-    :sites,
     :nsites,
     :nlanes,
     :socket,
@@ -45,6 +44,8 @@ function Base.summary(io::IO, tn::A) where {A<:Ansatz}
     print(io, "$(alias(tn)) (inputs=$(ninputs(tn)), outputs=$(noutputs(tn)))")
 end
 Base.show(io::IO, tn::A) where {A<:Ansatz} = summary(io, tn)
+
+sites(tn::Ansatz; kwargs...) = sites(Quantum(tn); kwargs...)
 
 function Tenet.inds(tn::Ansatz; kwargs...)
     if keys(kwargs) === (:bond,)

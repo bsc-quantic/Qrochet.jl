@@ -150,7 +150,15 @@ Base.show(io::IO, q::Quantum) = print(io, "Quantum (inputs=$(ninputs(q)), output
 
 Returns the sites of a [`Quantum`](@ref) Tensor Network.
 """
-sites(tn::Quantum) = collect(keys(tn.sites))
+function sites(tn::Quantum; kwargs...)
+    if isempty(kwargs)
+        collect(keys(tn.sites))
+    elseif keys(kwargs) === (:at,)
+        findfirst(i -> i === kwargs[:at], tn.sites)
+    else
+        throw(MethodError(sites, (Quantum,), kwargs))
+    end
+end
 
 """
     nsites(q::Quantum)

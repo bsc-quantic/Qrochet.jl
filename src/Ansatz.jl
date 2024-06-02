@@ -105,5 +105,5 @@ function LinearAlgebra.norm(ψ::Ansatz, p::Real = 2; kwargs...)
 end
 
 function LinearAlgebra.norm2(ψ::Ansatz; kwargs...)
-    return contract(TensorNetwork(merge(Quantum(ψ), Quantum(ψ'))); kwargs...) |> only |> sqrt |> abs
+    return contract(merge(TensorNetwork(ψ), TensorNetwork(ψ')); kwargs...) |> only |> sqrt |> abs
 end

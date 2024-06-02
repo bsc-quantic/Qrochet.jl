@@ -98,9 +98,6 @@ function Base.showerror(io::IO, e::MissingSchmidtCoefficientsException)
     print(io, "Can't access the spectrum on bond $(e.bond)")
 end
 
-function LinearAlgebra.norm(ψ::Ansatz, p::Real = 2; kwargs...)
-    p != 2 && throw(ArgumentError("p=$p is not implemented yet"))
-
-    # TODO: Replace with contract(hcat(ψ, ψ')...) when implemented
-    return contract(merge(TensorNetwork(ψ), TensorNetwork(ψ')); kwargs...) |> only |> sqrt |> abs
+function LinearAlgebra.norm2(ψ::Ansatz; kwargs...)
+    return contract(TensorNetwork(merge(Quantum(ψ), Quantum(ψ'))); kwargs...) |> only |> sqrt |> abs
 end

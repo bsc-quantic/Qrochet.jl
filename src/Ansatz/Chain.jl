@@ -704,7 +704,6 @@ function evolve!(ψ::Chain, mpo::Chain)
         end
     end
 
-
     for i in 1:L
         i < L && pop!(TensorNetwork(ψ), select(ψ, :between, Site(i), Site(i + 1)))
         pop!(TensorNetwork(ψ), select(ψ, :tensor, Site(i)))

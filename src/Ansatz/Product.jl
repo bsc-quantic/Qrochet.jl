@@ -41,12 +41,16 @@ function Product(::Operator, ::Open, arrays)
     Product(TensorNetwork(_tensors), sitemap)
 end
 
-function Base.zeros(::Type{Product}, n; p::Int = 2, eltype = Bool)
-    Product(State(), Open(), fill(append!([one(eltype)], Iterators.repeated(zero(eltype), p - 1)), n))
+function Base.zeros(::Type{Product}, n::Integer; p::Int = 2, eltype = Bool)
+    Product(State(), Open(), fill(append!([one(eltype)], collect(Iterators.repeated(zero(eltype), p - 1))), n))
 end
 
-function Base.ones(::Type{Product}, n; p::Int = 2, eltype = Bool)
-    Product(State(), Open(), fill(append!([zero(eltype), one(eltype)], Iterators.repeated(zero(eltype), p - 2)), n))
+function Base.ones(::Type{Product}, n::Integer; p::Int = 2, eltype = Bool)
+    Product(
+        State(),
+        Open(),
+        fill(append!([zero(eltype), one(eltype)], collect(Iterators.repeated(zero(eltype), p - 2))), n),
+    )
 end
 
 LinearAlgebra.norm(tn::Product, p::Real = 2) = LinearAlgebra.norm(socket(tn), tn, p)

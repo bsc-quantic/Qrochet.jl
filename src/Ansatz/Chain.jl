@@ -542,7 +542,7 @@ function evolve_2site!(qtn::Chain, gate::Dense; threshold, maxdim, iscanonical =
     left_inds::Vector{Symbol} = !isnothing(leftindex(qtn, sitel)) ? [leftindex(qtn, sitel)] : Symbol[]
     right_inds::Vector{Symbol} = !isnothing(rightindex(qtn, siter)) ? [rightindex(qtn, siter)] : Symbol[]
 
-    virtualind::Symbol = inds(qtn, :bond, bond...)
+    virtualind::Symbol = inds(qtn, bond = bond)
 
     iscanonical ? contract_2sitewf!(qtn, bond) : contract!(TensorNetwork(qtn), virtualind)
 
@@ -610,7 +610,7 @@ function contract_2sitewf!(ψ::Chain, bond)
     !isnothing(Λᵢ₋₁) && contract!(ψ, :between, Site(id(sitel) - 1), sitel; direction = :right, delete_Λ = false)
     !isnothing(Λᵢ₊₁) && contract!(ψ, :between, siter, Site(id(siter) + 1); direction = :left, delete_Λ = false)
 
-    contract!(TensorNetwork(ψ), inds(ψ, :bond, bond...))
+    contract!(TensorNetwork(ψ), inds(ψ, bond = bond))
 
     return ψ
 end

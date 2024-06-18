@@ -99,12 +99,12 @@
             @test leftindex(qtn, Site(2)) == rightindex(qtn, Site(1))
             @test leftindex(qtn, Site(3)) == rightindex(qtn, Site(2))
 
-            arrays = [permutedims(arrays[1], (2, 1)), permutedims(arrays[2], (3, 1, 2)), permutedims(arrays[3], (2, 1))] # now we have (:l, :o, :r)
+            arrays = [permutedims(arrays[1], (2, 1)), permutedims(arrays[2], (3, 1, 2)), permutedims(arrays[3], (1, 2))] # now we have (:r, :o, :l)
             qtn = Chain(State(), Open(), arrays, order=[:r, :o, :l])
 
             @test size(tensors(qtn; at = Site(1))) == (1, 2)
             @test size(tensors(qtn; at = Site(2))) == (3, 2, 1)
-            @test size(tensors(qtn; at = Site(3))) == (3, 2)
+            @test size(tensors(qtn; at = Site(3))) == (2, 3)
 
             @test leftindex(qtn, Site(1)) == rightindex(qtn, Site(3)) === nothing
             @test leftindex(qtn, Site(2)) == rightindex(qtn, Site(1))
@@ -139,12 +139,12 @@
                 @test size(TensorNetwork(qtn), inds(qtn; at = Site(i; dual=true))) == 4
             end
 
-            arrays = [permutedims(array, (3, 1, 2)), permutedims(array, (4, 1, 3, 2)), permutedims(array, (3, 1, 2))] # now we have (:r, :o, :l, :i)
+            arrays = [permutedims(arrays[1], (3, 1, 2)), permutedims(arrays[2], (4, 1, 3, 2)), permutedims(arrays[3], (1, 3, 2))] # now we have (:r, :o, :l, :i)
             qtn = Chain(Operator(), Open(), arrays, order=[:r, :o, :l, :i])
 
             @test size(tensors(qtn; at = Site(1))) == (1, 2, 4)
             @test size(tensors(qtn; at = Site(2))) == (3, 2, 1, 4)
-            @test size(tensors(qtn; at = Site(3))) == (3, 2, 4)
+            @test size(tensors(qtn; at = Site(3))) == (2, 3, 4)
 
             @test leftindex(qtn, Site(1)) == rightindex(qtn, Site(3)) === nothing
             @test leftindex(qtn, Site(2)) == rightindex(qtn, Site(1))

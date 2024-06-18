@@ -71,7 +71,7 @@ function Chain(::State, boundary::Open, arrays::Vector{<:AbstractArray}; order =
     issetequal(order, defaultorder(State())) || throw(ArgumentError("order must be a permutation of $(String.(defaultorder(State())))"))
 
     n = length(arrays)
-    symbols = [nextindex() for _ in 1:2n-1]
+    symbols = [nextindex() for _ in 1:2n]
 
     function get_index(directions, i, is_first, is_last)
         if is_first

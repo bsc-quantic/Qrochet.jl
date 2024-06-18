@@ -30,14 +30,33 @@ function Chain(tn::TensorNetwork, sites, args...; kwargs...)
     Chain(Quantum(tn, sites), args...; kwargs...)
 end
 
-function Chain(::State, boundary::Periodic, arrays::Vector{<:AbstractArray})
+defaultorder(::State) = (:o, :l, :r)
+defaultorder(::Operator) = (:o, :i, :l, :r)
+
+function Chain(::State, boundary::Periodic, arrays::Vector{<:AbstractArray}; order = defaultorder(State()))
     @assert all(==(3) ∘ ndims, arrays) "All arrays must have 3 dimensions"
+    issetequal(order, defaultorder(State())) || throw(ArgumentError("order must be a permutation of $(String.(defaultorder(State())))"))
 
     n = length(arrays)
     symbols = [nextindex() for _ in 1:2n]
 
+    function get_index(directions, i)
+        map(directions) do dir
+            if dir == :o
+                symbols[i]
+            elseif dir == :l
+                symbols[n + mod1(i, n)]
+            elseif dir == :r
+                symbols[n + mod1(i - 1, n)]
+            else
+                throw(ArgumentError("Invalid direction: $dir"))
+            end
+        end
+    end
+
     _tensors = map(enumerate(arrays)) do (i, array)
-        Tensor(array, [symbols[i], symbols[n+mod1(i - 1, n)], symbols[n+mod1(i, n)]])
+        inds = get_index(order, i)
+        Tensor(array, inds)
     end
 
     sitemap = Dict(Site(i) => symbols[i] for i in 1:n)
@@ -45,22 +64,40 @@ function Chain(::State, boundary::Periodic, arrays::Vector{<:AbstractArray})
     Chain(Quantum(TensorNetwork(_tensors), sitemap), boundary)
 end
 
-function Chain(::State, boundary::Open, arrays::Vector{<:AbstractArray})
+function Chain(::State, boundary::Open, arrays::Vector{<:AbstractArray}; order = defaultorder(State()))
     @assert ndims(arrays[1]) == 2 "First array must have 2 dimensions"
     @assert all(==(3) ∘ ndims, arrays[2:end-1]) "All arrays must have 3 dimensions"
     @assert ndims(arrays[end]) == 2 "Last array must have 2 dimensions"
+    issetequal(order, defaultorder(State())) || throw(ArgumentError("order must be a permutation of $(String.(defaultorder(State())))"))
 
     n = length(arrays)
     symbols = [nextindex() for _ in 1:2n-1]
 
-    _tensors = map(enumerate(arrays)) do (i, array)
-        if i == 1
-            Tensor(array, [symbols[1], symbols[1+n]])
-        elseif i == n
-            Tensor(array, [symbols[n], symbols[n+mod1(n - 1, n)]])
-        else
-            Tensor(array, [symbols[i], symbols[n+mod1(i - 1, n)], symbols[n+mod1(i, n)]])
+    function get_index(directions, i, is_first, is_last)
+        if is_first
+            directions = filter(x -> x != :l, directions)
+        elseif is_last
+            directions = filter(x -> x != :r, directions)
         end
+
+        map(directions) do dir
+            if dir == :o
+                symbols[i]
+            elseif dir == :l
+                symbols[n + mod1(i, n)]
+            elseif dir == :r
+                symbols[n + mod1(i - 1, n)]
+            else
+                throw(ArgumentError("Invalid direction: $dir"))
+            end
+        end
+    end
+
+    _tensors = map(enumerate(arrays)) do (i, array)
+        is_first = (i == 1)
+        is_last = (i == n)
+        inds = get_index(order, i, is_first, is_last)
+        Tensor(array, inds)
     end
 
     sitemap = Dict(Site(i) => symbols[i] for i in 1:n)
@@ -68,42 +105,80 @@ function Chain(::State, boundary::Open, arrays::Vector{<:AbstractArray})
     Chain(Quantum(TensorNetwork(_tensors), sitemap), boundary)
 end
 
-function Chain(::Operator, boundary::Periodic, arrays::Vector{<:AbstractArray})
-    @assert all(==(4) ∘ ndims, arrays) "All arrays must have 3 dimensions"
+function Chain(::Operator, boundary::Periodic, arrays::Vector{<:AbstractArray}; order = defaultorder(Operator()))
+    @assert all(==(4) ∘ ndims, arrays) "All arrays must have 4 dimensions"
+    issetequal(order, defaultorder(Operator())) || throw(ArgumentError("order must be a permutation of $(String.(defaultorder(Operator())))"))
 
     n = length(arrays)
     symbols = [nextindex() for _ in 1:3n]
 
+    function get_index(directions, i)
+        map(directions) do dir
+            if dir == :o
+                symbols[i]
+            elseif dir == :i
+                symbols[i + n]
+            elseif dir == :l
+                symbols[2n + mod1(i - 1, n)]
+            elseif dir == :r
+                symbols[2n + mod1(i, n)]
+            else
+                throw(ArgumentError("Invalid direction: $dir"))
+            end
+        end
+    end
+
     _tensors = map(enumerate(arrays)) do (i, array)
-        Tensor(array, [symbols[i], symbols[i+n], symbols[2n+mod1(i - 1, n)], symbols[2n+mod1(i, n)]])
+        inds = get_index(order, i)
+        Tensor(array, inds)
     end
 
     sitemap = Dict(Site(i) => symbols[i] for i in 1:n)
-    merge!(sitemap, Dict(Site(i; dual = true) => symbols[i+n] for i in 1:n))
+    merge!(sitemap, Dict(Site(i; dual = true) => symbols[i + n] for i in 1:n))
 
     Chain(Quantum(TensorNetwork(_tensors), sitemap), boundary)
 end
 
-function Chain(::Operator, boundary::Open, arrays::Vector{<:AbstractArray})
+function Chain(::Operator, boundary::Open, arrays::Vector{<:AbstractArray}; order = defaultorder(Operator()))
     @assert ndims(arrays[1]) == 3 "First array must have 3 dimensions"
     @assert all(==(4) ∘ ndims, arrays[2:end-1]) "All arrays must have 4 dimensions"
     @assert ndims(arrays[end]) == 3 "Last array must have 3 dimensions"
+    issetequal(order, defaultorder(Operator())) || throw(ArgumentError("order must be a permutation of $(String.(defaultorder(Operator())))"))
 
     n = length(arrays)
     symbols = [nextindex() for _ in 1:3n-1]
 
-    _tensors = map(enumerate(arrays)) do (i, array)
-        if i == 1
-            Tensor(array, [symbols[1], symbols[n+1], symbols[1+2n]])
-        elseif i == n
-            Tensor(array, [symbols[n], symbols[2n], symbols[2n+mod1(n - 1, n)]])
-        else
-            Tensor(array, [symbols[i], symbols[i+n], symbols[2n+mod1(i - 1, n)], symbols[2n+mod1(i, n)]])
+    function get_index(directions, i, is_first, is_last)
+        if is_first
+            directions = filter(x -> x != :l, directions)
+        elseif is_last
+            directions = filter(x -> x != :r, directions)
+        end
+
+        map(directions) do dir
+            if dir == :o
+                symbols[i]
+            elseif dir == :i
+                symbols[i + n]
+            elseif dir == :l
+                symbols[2n + mod1(i - 1, n)]
+            elseif dir == :r
+                symbols[2n + mod1(i, n)]
+            else
+                throw(ArgumentError("Invalid direction: $dir"))
+            end
         end
     end
 
+    _tensors = map(enumerate(arrays)) do (i, array)
+        is_first = (i == 1)
+        is_last = (i == n)
+        inds = get_index(order, i, is_first, is_last)
+        Tensor(array, inds)
+    end
+
     sitemap = Dict(Site(i) => symbols[i] for i in 1:n)
-    merge!(sitemap, Dict(Site(i; dual = true) => symbols[i+n] for i in 1:n))
+    merge!(sitemap, Dict(Site(i; dual = true) => symbols[i + n] for i in 1:n))
 
     Chain(Quantum(TensorNetwork(_tensors), sitemap), boundary)
 end

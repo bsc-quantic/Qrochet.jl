@@ -35,6 +35,7 @@
                 @test size(TensorNetwork(qtn), inds(qtn; at = Site(i))) == 2
             end
         end
+
         @testset "Operator" begin
             qtn = Chain(Operator(), Periodic(), [rand(2, 2, 4, 4) for _ in 1:3])
             @test socket(qtn) == Operator()

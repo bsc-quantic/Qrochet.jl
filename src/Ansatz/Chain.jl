@@ -30,12 +30,12 @@ function Chain(tn::TensorNetwork, sites, args...; kwargs...)
     Chain(Quantum(tn, sites), args...; kwargs...)
 end
 
-defaultorder(::State) = (:o, :l, :r)
-defaultorder(::Operator) = (:o, :i, :l, :r)
+defaultorder(::Type{Chain}, ::State) = (:o, :l, :r)
+defaultorder(::Type{Chain}, ::Operator) = (:o, :i, :l, :r)
 
-function Chain(::State, boundary::Periodic, arrays::Vector{<:AbstractArray}; order = defaultorder(State()))
+function Chain(::State, boundary::Periodic, arrays::Vector{<:AbstractArray}; order = defaultorder(Chain, State()))
     @assert all(==(3) ∘ ndims, arrays) "All arrays must have 3 dimensions"
-    issetequal(order, defaultorder(State())) ||
+    issetequal(order, defaultorder(Chain, State())) ||
         throw(ArgumentError("order must be a permutation of $(String.(defaultorder(State())))"))
 
     n = length(arrays)
@@ -65,7 +65,7 @@ function Chain(::State, boundary::Periodic, arrays::Vector{<:AbstractArray}; ord
     Chain(Quantum(TensorNetwork(_tensors), sitemap), boundary)
 end
 
-function Chain(::State, boundary::Open, arrays::Vector{<:AbstractArray}; order = defaultorder(State()))
+function Chain(::State, boundary::Open, arrays::Vector{<:AbstractArray}; order = defaultorder(Chain, State()))
     @assert ndims(arrays[1]) == 2 "First array must have 2 dimensions"
     @assert all(==(3) ∘ ndims, arrays[2:end-1]) "All arrays must have 3 dimensions"
     @assert ndims(arrays[end]) == 2 "Last array must have 2 dimensions"
@@ -107,7 +107,7 @@ function Chain(::State, boundary::Open, arrays::Vector{<:AbstractArray}; order =
     Chain(Quantum(TensorNetwork(_tensors), sitemap), boundary)
 end
 
-function Chain(::Operator, boundary::Periodic, arrays::Vector{<:AbstractArray}; order = defaultorder(Operator()))
+function Chain(::Operator, boundary::Periodic, arrays::Vector{<:AbstractArray}; order = defaultorder(Chain, Operator()))
     @assert all(==(4) ∘ ndims, arrays) "All arrays must have 4 dimensions"
     issetequal(order, defaultorder(Operator())) ||
         throw(ArgumentError("order must be a permutation of $(String.(defaultorder(Operator())))"))
@@ -142,7 +142,7 @@ function Chain(::Operator, boundary::Periodic, arrays::Vector{<:AbstractArray}; 
     Chain(Quantum(TensorNetwork(_tensors), sitemap), boundary)
 end
 
-function Chain(::Operator, boundary::Open, arrays::Vector{<:AbstractArray}; order = defaultorder(Operator()))
+function Chain(::Operator, boundary::Open, arrays::Vector{<:AbstractArray}; order = defaultorder(Chain, Operator()))
     @assert ndims(arrays[1]) == 3 "First array must have 3 dimensions"
     @assert all(==(4) ∘ ndims, arrays[2:end-1]) "All arrays must have 4 dimensions"
     @assert ndims(arrays[end]) == 3 "Last array must have 3 dimensions"

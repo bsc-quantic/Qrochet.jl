@@ -67,9 +67,9 @@
             @test size(tensors(qtn; at = Site(2))) == (6, 2, 3, 4)
             @test size(tensors(qtn; at = Site(3))) == (1, 2, 6, 4)
 
-            @test leftindex(qtn, Site(1)) == rightindex(qtn, Site(3))
-            @test leftindex(qtn, Site(2)) == rightindex(qtn, Site(1))
-            @test leftindex(qtn, Site(3)) == rightindex(qtn, Site(2))
+            @test leftindex(qtn, Site(1)) == rightindex(qtn, Site(3)) !== nothing
+            @test leftindex(qtn, Site(2)) == rightindex(qtn, Site(1)) !== nothing
+            @test leftindex(qtn, Site(3)) == rightindex(qtn, Site(2)) !== nothing
 
             for i in 1:length(arrays)
                 @test size(TensorNetwork(qtn), inds(qtn; at = Site(i))) == 2
@@ -107,8 +107,8 @@
             @test size(tensors(qtn; at = Site(3))) == (2, 3)
 
             @test leftindex(qtn, Site(1)) == rightindex(qtn, Site(3)) === nothing
-            @test leftindex(qtn, Site(2)) == rightindex(qtn, Site(1))
-            @test leftindex(qtn, Site(3)) == rightindex(qtn, Site(2))
+            @test leftindex(qtn, Site(2)) == rightindex(qtn, Site(1)) !== nothing
+            @test leftindex(qtn, Site(3)) == rightindex(qtn, Site(2)) !== nothing
 
             for i in 1:nsites(qtn)
                 @test size(TensorNetwork(qtn), inds(qtn; at = Site(i))) == 2
@@ -131,8 +131,8 @@
             @test size(tensors(qtn; at = Site(3))) == (2, 4, 3)
 
             @test leftindex(qtn, Site(1)) == rightindex(qtn, Site(3)) === nothing
-            @test leftindex(qtn, Site(2)) == rightindex(qtn, Site(1))
-            @test leftindex(qtn, Site(3)) == rightindex(qtn, Site(2))
+            @test leftindex(qtn, Site(2)) == rightindex(qtn, Site(1)) !== nothing
+            @test leftindex(qtn, Site(3)) == rightindex(qtn, Site(2)) !== nothing
 
             for i in 1:length(arrays)
                 @test size(TensorNetwork(qtn), inds(qtn; at = Site(i))) == 2
@@ -147,8 +147,8 @@
             @test size(tensors(qtn; at = Site(3))) == (2, 3, 4)
 
             @test leftindex(qtn, Site(1)) == rightindex(qtn, Site(3)) === nothing
-            @test leftindex(qtn, Site(2)) == rightindex(qtn, Site(1))
-            @test leftindex(qtn, Site(3)) == rightindex(qtn, Site(2))
+            @test leftindex(qtn, Site(2)) == rightindex(qtn, Site(1)) !== nothing
+            @test leftindex(qtn, Site(3)) == rightindex(qtn, Site(2)) !== nothing
 
             for i in 1:length(arrays)
                 @test size(TensorNetwork(qtn), inds(qtn; at = Site(i))) == 2

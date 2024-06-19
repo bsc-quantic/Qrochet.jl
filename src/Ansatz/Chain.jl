@@ -35,7 +35,8 @@ defaultorder(::Operator) = (:o, :i, :l, :r)
 
 function Chain(::State, boundary::Periodic, arrays::Vector{<:AbstractArray}; order = defaultorder(State()))
     @assert all(==(3) ∘ ndims, arrays) "All arrays must have 3 dimensions"
-    issetequal(order, defaultorder(State())) || throw(ArgumentError("order must be a permutation of $(String.(defaultorder(State())))"))
+    issetequal(order, defaultorder(State())) ||
+        throw(ArgumentError("order must be a permutation of $(String.(defaultorder(State())))"))
 
     n = length(arrays)
     symbols = [nextindex() for _ in 1:2n]
@@ -45,9 +46,9 @@ function Chain(::State, boundary::Periodic, arrays::Vector{<:AbstractArray}; ord
             if dir == :o
                 symbols[i]
             elseif dir == :r
-                symbols[n + mod1(i, n)]
+                symbols[n+mod1(i, n)]
             elseif dir == :l
-                symbols[n + mod1(i - 1, n)]
+                symbols[n+mod1(i - 1, n)]
             else
                 throw(ArgumentError("Invalid direction: $dir"))
             end
@@ -68,7 +69,8 @@ function Chain(::State, boundary::Open, arrays::Vector{<:AbstractArray}; order =
     @assert ndims(arrays[1]) == 2 "First array must have 2 dimensions"
     @assert all(==(3) ∘ ndims, arrays[2:end-1]) "All arrays must have 3 dimensions"
     @assert ndims(arrays[end]) == 2 "Last array must have 2 dimensions"
-    issetequal(order, defaultorder(State())) || throw(ArgumentError("order must be a permutation of $(String.(defaultorder(State())))"))
+    issetequal(order, defaultorder(State())) ||
+        throw(ArgumentError("order must be a permutation of $(String.(defaultorder(State())))"))
 
     n = length(arrays)
     symbols = [nextindex() for _ in 1:2n]
@@ -84,9 +86,9 @@ function Chain(::State, boundary::Open, arrays::Vector{<:AbstractArray}; order =
             if dir == :o
                 symbols[i]
             elseif dir == :r
-                symbols[n + mod1(i, n)]
+                symbols[n+mod1(i, n)]
             elseif dir == :l
-                symbols[n + mod1(i - 1, n)]
+                symbols[n+mod1(i - 1, n)]
             else
                 throw(ArgumentError("Invalid direction: $dir"))
             end
@@ -107,7 +109,8 @@ end
 
 function Chain(::Operator, boundary::Periodic, arrays::Vector{<:AbstractArray}; order = defaultorder(Operator()))
     @assert all(==(4) ∘ ndims, arrays) "All arrays must have 4 dimensions"
-    issetequal(order, defaultorder(Operator())) || throw(ArgumentError("order must be a permutation of $(String.(defaultorder(Operator())))"))
+    issetequal(order, defaultorder(Operator())) ||
+        throw(ArgumentError("order must be a permutation of $(String.(defaultorder(Operator())))"))
 
     n = length(arrays)
     symbols = [nextindex() for _ in 1:3n]
@@ -117,11 +120,11 @@ function Chain(::Operator, boundary::Periodic, arrays::Vector{<:AbstractArray}; 
             if dir == :o
                 symbols[i]
             elseif dir == :i
-                symbols[i + n]
+                symbols[i+n]
             elseif dir == :l
-                symbols[2n + mod1(i - 1, n)]
+                symbols[2n+mod1(i - 1, n)]
             elseif dir == :r
-                symbols[2n + mod1(i, n)]
+                symbols[2n+mod1(i, n)]
             else
                 throw(ArgumentError("Invalid direction: $dir"))
             end
@@ -134,7 +137,7 @@ function Chain(::Operator, boundary::Periodic, arrays::Vector{<:AbstractArray}; 
     end
 
     sitemap = Dict(Site(i) => symbols[i] for i in 1:n)
-    merge!(sitemap, Dict(Site(i; dual = true) => symbols[i + n] for i in 1:n))
+    merge!(sitemap, Dict(Site(i; dual = true) => symbols[i+n] for i in 1:n))
 
     Chain(Quantum(TensorNetwork(_tensors), sitemap), boundary)
 end
@@ -143,7 +146,8 @@ function Chain(::Operator, boundary::Open, arrays::Vector{<:AbstractArray}; orde
     @assert ndims(arrays[1]) == 3 "First array must have 3 dimensions"
     @assert all(==(4) ∘ ndims, arrays[2:end-1]) "All arrays must have 4 dimensions"
     @assert ndims(arrays[end]) == 3 "Last array must have 3 dimensions"
-    issetequal(order, defaultorder(Operator())) || throw(ArgumentError("order must be a permutation of $(String.(defaultorder(Operator())))"))
+    issetequal(order, defaultorder(Operator())) ||
+        throw(ArgumentError("order must be a permutation of $(String.(defaultorder(Operator())))"))
 
     n = length(arrays)
     symbols = [nextindex() for _ in 1:3n-1]
@@ -159,11 +163,11 @@ function Chain(::Operator, boundary::Open, arrays::Vector{<:AbstractArray}; orde
             if dir == :o
                 symbols[i]
             elseif dir == :i
-                symbols[i + n]
+                symbols[i+n]
             elseif dir == :l
-                symbols[2n + mod1(i - 1, n)]
+                symbols[2n+mod1(i - 1, n)]
             elseif dir == :r
-                symbols[2n + mod1(i, n)]
+                symbols[2n+mod1(i, n)]
             else
                 throw(ArgumentError("Invalid direction: $dir"))
             end
@@ -178,7 +182,7 @@ function Chain(::Operator, boundary::Open, arrays::Vector{<:AbstractArray}; orde
     end
 
     sitemap = Dict(Site(i) => symbols[i] for i in 1:n)
-    merge!(sitemap, Dict(Site(i; dual = true) => symbols[i + n] for i in 1:n))
+    merge!(sitemap, Dict(Site(i; dual = true) => symbols[i+n] for i in 1:n))
 
     Chain(Quantum(TensorNetwork(_tensors), sitemap), boundary)
 end

@@ -21,7 +21,7 @@
             @test leftindex(qtn, Site(3)) == rightindex(qtn, Site(2))
 
             arrays = [permutedims(array, (3, 1, 2)) for array in arrays] # now we have (:r, :o, :l)
-            qtn = Chain(State(), Periodic(), arrays, order=[:r, :o, :l])
+            qtn = Chain(State(), Periodic(), arrays, order = [:r, :o, :l])
 
             @test size(tensors(qtn; at = Site(1))) == (4, 2, 1)
             @test size(tensors(qtn; at = Site(2))) == (3, 2, 4)
@@ -57,11 +57,11 @@
 
             for i in 1:length(arrays)
                 @test size(TensorNetwork(qtn), inds(qtn; at = Site(i))) == 2
-                @test size(TensorNetwork(qtn), inds(qtn; at = Site(i; dual=true))) == 4
+                @test size(TensorNetwork(qtn), inds(qtn; at = Site(i; dual = true))) == 4
             end
 
             arrays = [permutedims(array, (4, 1, 3, 2)) for array in arrays] # now we have (:r, :o, :l, :i)
-            qtn = Chain(Operator(), Periodic(), arrays, order=[:r, :o, :l, :i])
+            qtn = Chain(Operator(), Periodic(), arrays, order = [:r, :o, :l, :i])
 
             @test size(tensors(qtn; at = Site(1))) == (3, 2, 1, 4)
             @test size(tensors(qtn; at = Site(2))) == (6, 2, 3, 4)
@@ -73,7 +73,7 @@
 
             for i in 1:length(arrays)
                 @test size(TensorNetwork(qtn), inds(qtn; at = Site(i))) == 2
-                @test size(TensorNetwork(qtn), inds(qtn; at = Site(i; dual=true))) == 4
+                @test size(TensorNetwork(qtn), inds(qtn; at = Site(i; dual = true))) == 4
             end
         end
     end
@@ -100,7 +100,7 @@
             @test leftindex(qtn, Site(3)) == rightindex(qtn, Site(2))
 
             arrays = [permutedims(arrays[1], (2, 1)), permutedims(arrays[2], (3, 1, 2)), permutedims(arrays[3], (1, 2))] # now we have (:r, :o, :l)
-            qtn = Chain(State(), Open(), arrays, order=[:r, :o, :l])
+            qtn = Chain(State(), Open(), arrays, order = [:r, :o, :l])
 
             @test size(tensors(qtn; at = Site(1))) == (1, 2)
             @test size(tensors(qtn; at = Site(2))) == (3, 2, 1)
@@ -136,11 +136,15 @@
 
             for i in 1:length(arrays)
                 @test size(TensorNetwork(qtn), inds(qtn; at = Site(i))) == 2
-                @test size(TensorNetwork(qtn), inds(qtn; at = Site(i; dual=true))) == 4
+                @test size(TensorNetwork(qtn), inds(qtn; at = Site(i; dual = true))) == 4
             end
 
-            arrays = [permutedims(arrays[1], (3, 1, 2)), permutedims(arrays[2], (4, 1, 3, 2)), permutedims(arrays[3], (1, 3, 2))] # now we have (:r, :o, :l, :i)
-            qtn = Chain(Operator(), Open(), arrays, order=[:r, :o, :l, :i])
+            arrays = [
+                permutedims(arrays[1], (3, 1, 2)),
+                permutedims(arrays[2], (4, 1, 3, 2)),
+                permutedims(arrays[3], (1, 3, 2)),
+            ] # now we have (:r, :o, :l, :i)
+            qtn = Chain(Operator(), Open(), arrays, order = [:r, :o, :l, :i])
 
             @test size(tensors(qtn; at = Site(1))) == (1, 2, 4)
             @test size(tensors(qtn; at = Site(2))) == (3, 2, 1, 4)
@@ -152,7 +156,7 @@
 
             for i in 1:length(arrays)
                 @test size(TensorNetwork(qtn), inds(qtn; at = Site(i))) == 2
-                @test size(TensorNetwork(qtn), inds(qtn; at = Site(i; dual=true))) == 4
+                @test size(TensorNetwork(qtn), inds(qtn; at = Site(i; dual = true))) == 4
             end
         end
     end

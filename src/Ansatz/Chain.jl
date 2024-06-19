@@ -44,9 +44,9 @@ function Chain(::State, boundary::Periodic, arrays::Vector{<:AbstractArray}; ord
         map(directions) do dir
             if dir == :o
                 symbols[i]
-            elseif dir == :l
-                symbols[n + mod1(i, n)]
             elseif dir == :r
+                symbols[n + mod1(i, n)]
+            elseif dir == :l
                 symbols[n + mod1(i - 1, n)]
             else
                 throw(ArgumentError("Invalid direction: $dir"))
@@ -83,9 +83,9 @@ function Chain(::State, boundary::Open, arrays::Vector{<:AbstractArray}; order =
         map(directions) do dir
             if dir == :o
                 symbols[i]
-            elseif dir == :l
-                symbols[n + mod1(i, n)]
             elseif dir == :r
+                symbols[n + mod1(i, n)]
+            elseif dir == :l
                 symbols[n + mod1(i - 1, n)]
             else
                 throw(ArgumentError("Invalid direction: $dir"))

@@ -77,7 +77,13 @@ function Chain(::State, boundary::Open, arrays::Vector{<:AbstractArray}; order =
         elseif i == n
             _order = filter(x -> x != :r, order)
         else
-            _order = order
+         local order = if i == 1
+             filter(x -> x != :l, order)
+         elseif i == n
+             filter(x -> x != :r, order)
+         else
+             order
+         end
         end
 
         inds = map(_order) do dir

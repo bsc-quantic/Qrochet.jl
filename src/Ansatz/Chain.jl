@@ -72,18 +72,12 @@ function Chain(::State, boundary::Open, arrays::Vector{<:AbstractArray}; order =
     symbols = [nextindex() for _ in 1:2n]
 
     _tensors = map(enumerate(arrays)) do (i, array)
-        if i == 1
-            _order = filter(x -> x != :l, order)
+        _order = if i == 1
+            filter(x -> x != :l, order)
         elseif i == n
-            _order = filter(x -> x != :r, order)
+            filter(x -> x != :r, order)
         else
-         local order = if i == 1
-             filter(x -> x != :l, order)
-         elseif i == n
-             filter(x -> x != :r, order)
-         else
-             order
-         end
+            order
         end
 
         inds = map(_order) do dir
@@ -147,12 +141,12 @@ function Chain(::Operator, boundary::Open, arrays::Vector{<:AbstractArray}; orde
     symbols = [nextindex() for _ in 1:3n-1]
 
     _tensors = map(enumerate(arrays)) do (i, array)
-        if i == 1
-            _order = filter(x -> x != :l, order)
+        _order = if i == 1
+            filter(x -> x != :l, order)
         elseif i == n
-            _order = filter(x -> x != :r, order)
+            filter(x -> x != :r, order)
         else
-            _order = order
+            order
         end
 
         inds = map(_order) do dir

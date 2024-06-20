@@ -500,7 +500,7 @@ mixed_canonize!(tn::Chain, args...; kwargs...) = mixed_canonize!(boundary(tn), t
     mixed_canonize!(boundary::Boundary, tn::Chain, center::Site)
 
 Transform a `Chain` tensor network into the mixed-canonical form, that is,
-for i < center the tensors are left-canonical and for i > center the tensors are right-canonical,
+for i < center the tensors are left-canonical and for i >= center the tensors are right-canonical,
 and in the center there is a matrix with singular values.
 """
 function mixed_canonize!(::Open, tn::Chain, center::Site) # TODO: center could be a range of sites
@@ -514,6 +514,9 @@ function mixed_canonize!(::Open, tn::Chain, center::Site) # TODO: center could b
         canonize_site!(tn, Site(i); direction = :left, method = :qr)
     end
 
+    # center SVD sweep to get singular values
+    canonize_site!(tn, center; direction = :left, method = :svd)
+
     return tn
 end
 
@@ -525,7 +528,7 @@ to mixed-canonized form with the given center site.
 """
 function LinearAlgebra.normalize!(tn::Chain, root::Site; p::Real = 2)
     mixed_canonize!(tn, root)
-    normalize!(tensors(Quantum(tn); at = root), p)
+    normalize!(tensors(tn; between = (Site(id(root) - 1), root)), p)
     return tn
 end
 

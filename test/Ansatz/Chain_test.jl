@@ -359,9 +359,11 @@
             qtn = Chain(State(), Open(), [rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
             canonized = mixed_canonize(qtn, Site(3))
 
+            @test length(tensors(canonized)) == length(tensors(qtn)) + 1
+
             @test isleftcanonical(canonized, Site(1))
             @test isleftcanonical(canonized, Site(2))
-            @test !isleftcanonical(canonized, Site(3)) && !isrightcanonical(canonized, Site(3))
+            @test isrightcanonical(canonized, Site(3))
             @test isrightcanonical(canonized, Site(4))
             @test isrightcanonical(canonized, Site(5))
 

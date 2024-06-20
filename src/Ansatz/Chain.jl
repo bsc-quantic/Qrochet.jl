@@ -183,19 +183,22 @@ function Base.convert(::Type{Chain}, qtn::Product)
 end
 
 leftsite(tn::Chain, site::Site) = leftsite(boundary(tn), tn, site)
-leftsite(::Open, tn::Chain, site::Site) = id(site) ∈ range(2, nlanes(tn)) ? Site(id(site) - 1) : nothing
-leftsite(::Periodic, tn::Chain, site::Site) = Site(mod1(id(site) - 1, nlanes(tn)))
+leftsite(::Open, tn::Chain, site::Site) =
+    id(site) ∈ range(2, nlanes(tn)) ? Site(id(site) - 1; dual = isdual(site)) : nothing
+leftsite(::Periodic, tn::Chain, site::Site) = Site(mod1(id(site) - 1, nlanes(tn)); dual = isdual(site))
 
 rightsite(tn::Chain, site::Site) = rightsite(boundary(tn), tn, site)
-rightsite(::Open, tn::Chain, site::Site) = id(site) ∈ range(1, nlanes(tn) - 1) ? Site(id(site) + 1) : nothing
-rightsite(::Periodic, tn::Chain, site::Site) = Site(mod1(id(site) + 1, nlanes(tn)))
+rightsite(::Open, tn::Chain, site::Site) =
+    id(site) ∈ range(1, nlanes(tn) - 1) ? Site(id(site) + 1; dual = isdual(site)) : nothing
+rightsite(::Periodic, tn::Chain, site::Site) = Site(mod1(id(site) + 1, nlanes(tn)); dual = isdual(site))
 
 leftindex(tn::Chain, site::Site) = leftindex(boundary(tn), tn, site)
 leftindex(::Open, tn::Chain, site::Site) = site == site"1" ? nothing : leftindex(Periodic(), tn, site)
 leftindex(::Periodic, tn::Chain, site::Site) = inds(tn; bond = (site, leftsite(tn, site)))
 
 rightindex(tn::Chain, site::Site) = rightindex(boundary(tn), tn, site)
-rightindex(::Open, tn::Chain, site::Site) = site == Site(nlanes(tn)) ? nothing : rightindex(Periodic(), tn, site)
+rightindex(::Open, tn::Chain, site::Site) =
+    site == Site(nlanes(tn); dual = isdual(site)) ? nothing : rightindex(Periodic(), tn, site)
 rightindex(::Periodic, tn::Chain, site::Site) = inds(tn; bond = (site, rightsite(tn, site)))
 
 Base.adjoint(chain::Chain) = Chain(adjoint(Quantum(chain)), boundary(chain))

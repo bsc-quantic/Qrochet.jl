@@ -528,7 +528,7 @@ to mixed-canonized form with the given center site.
 """
 function LinearAlgebra.normalize!(tn::Chain, root::Site; p::Real = 2)
     mixed_canonize!(tn, root)
-    normalize!(tensors(Quantum(tn); at = root), p)
+    normalize!(tensors(tn; between = (Site(id(root)-1), root)), p)
     return tn
 end
 

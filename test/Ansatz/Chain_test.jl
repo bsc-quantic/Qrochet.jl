@@ -380,5 +380,18 @@
         isapprox(norm(qtn), 1.0)
     end
 
+    @testset "adjoint" begin
+        qtn = rand(Chain, Open, State; n = 5, p = 2, χ = 10)
+        adjoint_qtn = adjoint(qtn)
+
+        for i in 1:nsites(qtn)
+            i < nsites(qtn) &&
+                @test rightindex(adjoint_qtn, Site(i; dual = true)) == Symbol(String(rightindex(qtn, Site(i))) * "'")
+            i > 1 && @test leftindex(adjoint_qtn, Site(i; dual = true)) == Symbol(String(leftindex(qtn, Site(i))) * "'")
+        end
+
+        @test isapprox(contract(TensorNetwork(qtn)), contract(TensorNetwork(adjoint_qtn)))
+    end
+
     # TODO test `evolve!` methods
 end

@@ -500,7 +500,7 @@ mixed_canonize!(tn::Chain, args...; kwargs...) = mixed_canonize!(boundary(tn), t
     mixed_canonize!(boundary::Boundary, tn::Chain, center::Site)
 
 Transform a `Chain` tensor network into the mixed-canonical form, that is,
-for i < center the tensors are left-canonical and for i > center the tensors are right-canonical,
+for i < center the tensors are left-canonical and for i >= center the tensors are right-canonical,
 and in the center there is a matrix with singular values.
 """
 function mixed_canonize!(::Open, tn::Chain, center::Site) # TODO: center could be a range of sites

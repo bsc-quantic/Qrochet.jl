@@ -514,6 +514,9 @@ function mixed_canonize!(::Open, tn::Chain, center::Site) # TODO: center could b
         canonize_site!(tn, Site(i); direction = :left, method = :qr)
     end
 
+    # center SVD sweep to get singular values
+    canonize_site!(tn, center; direction = :left, method = :svd)
+
     return tn
 end
 

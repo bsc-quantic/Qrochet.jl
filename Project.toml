@@ -24,7 +24,7 @@ QrochetYaoExt = "Yao"
 [compat]
 ChainRulesCore = "1.0"
 ChainRulesTestUtils = "1"
-Muscle = "0.1"
+Muscle = "0.2"
 Quac = "0.3"
 Tenet = "0.6"
 Yao = "0.8, 0.9"

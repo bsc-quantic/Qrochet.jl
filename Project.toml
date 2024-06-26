@@ -24,6 +24,7 @@ QrochetQuacExt = "Quac"
 QrochetYaoExt = "Yao"
 
 [compat]
+Adapt = "4"
 ChainRulesCore = "1.0"
 ChainRulesTestUtils = "1"
 Muscle = "0.2"

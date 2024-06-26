@@ -1,35 +1,166 @@
 @testset "Chain ansatz" begin
-    qtn = Chain(State(), Periodic(), [rand(2, 4, 4) for _ in 1:3])
-    @test socket(qtn) == State()
-    @test ninputs(qtn) == 0
-    @test noutputs(qtn) == 3
-    @test issetequal(sites(qtn), [site"1", site"2", site"3"])
-    @test boundary(qtn) == Periodic()
-    @test leftindex(qtn, site"1") == rightindex(qtn, site"3") != nothing
+    @testset "Periodic boundary" begin
+        @testset "State" begin
+            qtn = Chain(State(), Periodic(), [rand(2, 4, 4) for _ in 1:3])
+            @test socket(qtn) == State()
+            @test ninputs(qtn) == 0
+            @test noutputs(qtn) == 3
+            @test issetequal(sites(qtn), [site"1", site"2", site"3"])
+            @test boundary(qtn) == Periodic()
+            @test leftindex(qtn, site"1") == rightindex(qtn, site"3") != nothing
 
-    qtn = Chain(State(), Open(), [rand(2, 2), rand(2, 2, 2), rand(2, 2)])
-    @test socket(qtn) == State()
-    @test ninputs(qtn) == 0
-    @test noutputs(qtn) == 3
-    @test issetequal(sites(qtn), [site"1", site"2", site"3"])
-    @test boundary(qtn) == Open()
-    @test leftindex(qtn, site"1") == rightindex(qtn, site"3") == nothing
+            arrays = [rand(2, 1, 4), rand(2, 4, 3), rand(2, 3, 1)]
+            qtn = Chain(State(), Periodic(), arrays) # Default order (:o, :l, :r)
 
-    qtn = Chain(Operator(), Periodic(), [rand(2, 2, 4, 4) for _ in 1:3])
-    @test socket(qtn) == Operator()
-    @test ninputs(qtn) == 3
-    @test noutputs(qtn) == 3
-    @test issetequal(sites(qtn), [site"1", site"2", site"3", site"1'", site"2'", site"3'"])
-    @test boundary(qtn) == Periodic()
-    @test leftindex(qtn, site"1") == rightindex(qtn, site"3") != nothing
+            @test size(tensors(qtn; at = Site(1))) == (2, 1, 4)
+            @test size(tensors(qtn; at = Site(2))) == (2, 4, 3)
+            @test size(tensors(qtn; at = Site(3))) == (2, 3, 1)
 
-    qtn = Chain(Operator(), Open(), [rand(2, 2, 4), rand(2, 2, 4, 4), rand(2, 2, 4)])
-    @test socket(qtn) == Operator()
-    @test ninputs(qtn) == 3
-    @test noutputs(qtn) == 3
-    @test issetequal(sites(qtn), [site"1", site"2", site"3", site"1'", site"2'", site"3'"])
-    @test boundary(qtn) == Open()
-    @test leftindex(qtn, site"1") == rightindex(qtn, site"3") == nothing
+            @test leftindex(qtn, Site(1)) == rightindex(qtn, Site(3))
+            @test leftindex(qtn, Site(2)) == rightindex(qtn, Site(1))
+            @test leftindex(qtn, Site(3)) == rightindex(qtn, Site(2))
+
+            arrays = [permutedims(array, (3, 1, 2)) for array in arrays] # now we have (:r, :o, :l)
+            qtn = Chain(State(), Periodic(), arrays, order = [:r, :o, :l])
+
+            @test size(tensors(qtn; at = Site(1))) == (4, 2, 1)
+            @test size(tensors(qtn; at = Site(2))) == (3, 2, 4)
+            @test size(tensors(qtn; at = Site(3))) == (1, 2, 3)
+
+            @test leftindex(qtn, Site(1)) == rightindex(qtn, Site(3))
+            @test leftindex(qtn, Site(2)) == rightindex(qtn, Site(1))
+            @test leftindex(qtn, Site(3)) == rightindex(qtn, Site(2))
+
+            for i in 1:nsites(qtn)
+                @test size(TensorNetwork(qtn), inds(qtn; at = Site(i))) == 2
+            end
+        end
+
+        @testset "Operator" begin
+            qtn = Chain(Operator(), Periodic(), [rand(2, 2, 4, 4) for _ in 1:3])
+            @test socket(qtn) == Operator()
+            @test ninputs(qtn) == 3
+            @test noutputs(qtn) == 3
+            @test issetequal(sites(qtn), [site"1", site"2", site"3", site"1'", site"2'", site"3'"])
+            @test boundary(qtn) == Periodic()
+            @test leftindex(qtn, site"1") == rightindex(qtn, site"3") != nothing
+
+            arrays = [rand(2, 4, 1, 3), rand(2, 4, 3, 6), rand(2, 4, 6, 1)] # Default order (:o, :i, :l, :r)
+            qtn = Chain(Operator(), Periodic(), arrays)
+
+            @test size(tensors(qtn; at = Site(1))) == (2, 4, 1, 3)
+            @test size(tensors(qtn; at = Site(2))) == (2, 4, 3, 6)
+            @test size(tensors(qtn; at = Site(3))) == (2, 4, 6, 1)
+
+            @test leftindex(qtn, Site(1)) == rightindex(qtn, Site(3))
+            @test leftindex(qtn, Site(2)) == rightindex(qtn, Site(1))
+            @test leftindex(qtn, Site(3)) == rightindex(qtn, Site(2))
+
+            for i in 1:length(arrays)
+                @test size(TensorNetwork(qtn), inds(qtn; at = Site(i))) == 2
+                @test size(TensorNetwork(qtn), inds(qtn; at = Site(i; dual = true))) == 4
+            end
+
+            arrays = [permutedims(array, (4, 1, 3, 2)) for array in arrays] # now we have (:r, :o, :l, :i)
+            qtn = Chain(Operator(), Periodic(), arrays, order = [:r, :o, :l, :i])
+
+            @test size(tensors(qtn; at = Site(1))) == (3, 2, 1, 4)
+            @test size(tensors(qtn; at = Site(2))) == (6, 2, 3, 4)
+            @test size(tensors(qtn; at = Site(3))) == (1, 2, 6, 4)
+
+            @test leftindex(qtn, Site(1)) == rightindex(qtn, Site(3)) !== nothing
+            @test leftindex(qtn, Site(2)) == rightindex(qtn, Site(1)) !== nothing
+            @test leftindex(qtn, Site(3)) == rightindex(qtn, Site(2)) !== nothing
+
+            for i in 1:length(arrays)
+                @test size(TensorNetwork(qtn), inds(qtn; at = Site(i))) == 2
+                @test size(TensorNetwork(qtn), inds(qtn; at = Site(i; dual = true))) == 4
+            end
+        end
+    end
+
+    @testset "Open boundary" begin
+        @testset "State" begin
+            qtn = Chain(State(), Open(), [rand(2, 2), rand(2, 2, 2), rand(2, 2)])
+            @test socket(qtn) == State()
+            @test ninputs(qtn) == 0
+            @test noutputs(qtn) == 3
+            @test issetequal(sites(qtn), [site"1", site"2", site"3"])
+            @test boundary(qtn) == Open()
+            @test leftindex(qtn, site"1") == rightindex(qtn, site"3") == nothing
+
+            arrays = [rand(2, 1), rand(2, 1, 3), rand(2, 3)]
+            qtn = Chain(State(), Open(), arrays) # Default order (:o, :l, :r)
+
+            @test size(tensors(qtn; at = Site(1))) == (2, 1)
+            @test size(tensors(qtn; at = Site(2))) == (2, 1, 3)
+            @test size(tensors(qtn; at = Site(3))) == (2, 3)
+
+            @test leftindex(qtn, Site(1)) == rightindex(qtn, Site(3)) === nothing
+            @test leftindex(qtn, Site(2)) == rightindex(qtn, Site(1))
+            @test leftindex(qtn, Site(3)) == rightindex(qtn, Site(2))
+
+            arrays = [permutedims(arrays[1], (2, 1)), permutedims(arrays[2], (3, 1, 2)), permutedims(arrays[3], (1, 2))] # now we have (:r, :o, :l)
+            qtn = Chain(State(), Open(), arrays, order = [:r, :o, :l])
+
+            @test size(tensors(qtn; at = Site(1))) == (1, 2)
+            @test size(tensors(qtn; at = Site(2))) == (3, 2, 1)
+            @test size(tensors(qtn; at = Site(3))) == (2, 3)
+
+            @test leftindex(qtn, Site(1)) == rightindex(qtn, Site(3)) === nothing
+            @test leftindex(qtn, Site(2)) == rightindex(qtn, Site(1)) !== nothing
+            @test leftindex(qtn, Site(3)) == rightindex(qtn, Site(2)) !== nothing
+
+            for i in 1:nsites(qtn)
+                @test size(TensorNetwork(qtn), inds(qtn; at = Site(i))) == 2
+            end
+        end
+        @testset "Operator" begin
+            qtn = Chain(Operator(), Open(), [rand(2, 2, 4), rand(2, 2, 4, 4), rand(2, 2, 4)])
+            @test socket(qtn) == Operator()
+            @test ninputs(qtn) == 3
+            @test noutputs(qtn) == 3
+            @test issetequal(sites(qtn), [site"1", site"2", site"3", site"1'", site"2'", site"3'"])
+            @test boundary(qtn) == Open()
+            @test leftindex(qtn, site"1") == rightindex(qtn, site"3") == nothing
+
+            arrays = [rand(2, 4, 1), rand(2, 4, 1, 3), rand(2, 4, 3)] # Default order (:o :i, :l, :r)
+            qtn = Chain(Operator(), Open(), arrays)
+
+            @test size(tensors(qtn; at = Site(1))) == (2, 4, 1)
+            @test size(tensors(qtn; at = Site(2))) == (2, 4, 1, 3)
+            @test size(tensors(qtn; at = Site(3))) == (2, 4, 3)
+
+            @test leftindex(qtn, Site(1)) == rightindex(qtn, Site(3)) === nothing
+            @test leftindex(qtn, Site(2)) == rightindex(qtn, Site(1)) !== nothing
+            @test leftindex(qtn, Site(3)) == rightindex(qtn, Site(2)) !== nothing
+
+            for i in 1:length(arrays)
+                @test size(TensorNetwork(qtn), inds(qtn; at = Site(i))) == 2
+                @test size(TensorNetwork(qtn), inds(qtn; at = Site(i; dual = true))) == 4
+            end
+
+            arrays = [
+                permutedims(arrays[1], (3, 1, 2)),
+                permutedims(arrays[2], (4, 1, 3, 2)),
+                permutedims(arrays[3], (1, 3, 2)),
+            ] # now we have (:r, :o, :l, :i)
+            qtn = Chain(Operator(), Open(), arrays, order = [:r, :o, :l, :i])
+
+            @test size(tensors(qtn; at = Site(1))) == (1, 2, 4)
+            @test size(tensors(qtn; at = Site(2))) == (3, 2, 1, 4)
+            @test size(tensors(qtn; at = Site(3))) == (2, 3, 4)
+
+            @test leftindex(qtn, Site(1)) == rightindex(qtn, Site(3)) === nothing
+            @test leftindex(qtn, Site(2)) == rightindex(qtn, Site(1)) !== nothing
+            @test leftindex(qtn, Site(3)) == rightindex(qtn, Site(2)) !== nothing
+
+            for i in 1:length(arrays)
+                @test size(TensorNetwork(qtn), inds(qtn; at = Site(i))) == 2
+                @test size(TensorNetwork(qtn), inds(qtn; at = Site(i; dual = true))) == 4
+            end
+        end
+    end
 
     @testset "Site" begin
         using Qrochet: leftsite, rightsite
@@ -228,9 +359,11 @@
             qtn = Chain(State(), Open(), [rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
             canonized = mixed_canonize(qtn, Site(3))
 
+            @test length(tensors(canonized)) == length(tensors(qtn)) + 1
+
             @test isleftcanonical(canonized, Site(1))
             @test isleftcanonical(canonized, Site(2))
-            @test !isleftcanonical(canonized, Site(3)) && !isrightcanonical(canonized, Site(3))
+            @test isrightcanonical(canonized, Site(3))
             @test isrightcanonical(canonized, Site(4))
             @test isrightcanonical(canonized, Site(5))
 
@@ -245,6 +378,19 @@
         qtn = MPS([rand(4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4, 4), rand(4, 4)])
         normalize!(qtn, Site(3))
         isapprox(norm(qtn), 1.0)
+    end
+
+    @testset "adjoint" begin
+        qtn = rand(Chain, Open, State; n = 5, p = 2, χ = 10)
+        adjoint_qtn = adjoint(qtn)
+
+        for i in 1:nsites(qtn)
+            i < nsites(qtn) &&
+                @test rightindex(adjoint_qtn, Site(i; dual = true)) == Symbol(String(rightindex(qtn, Site(i))) * "'")
+            i > 1 && @test leftindex(adjoint_qtn, Site(i; dual = true)) == Symbol(String(leftindex(qtn, Site(i))) * "'")
+        end
+
+        @test isapprox(contract(TensorNetwork(qtn)), contract(TensorNetwork(adjoint_qtn)))
     end
 
     # TODO test `evolve!` methods

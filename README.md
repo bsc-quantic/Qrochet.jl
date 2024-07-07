@@ -6,7 +6,7 @@
 [![Documentation: stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://bsc-quantic.github.io/Qrochet.jl/)
 [![Documentation: dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://bsc-quantic.github.io/Qrochet.jl/dev/)
 
-> [!IMPORTANT]
-> `Qrochet` is still in an experimental phase. Breaking changes might appear between minor versions.
+> [!WARNING]
+> `Qrochet` has been merged back into [`Tenet.jl`](https://github.com/bsc-quantic/Tenet.jl).
 
 A Quantum Tensor Networks library on top of [`Tenet`](https://github.com/bsc-quantic/Tenet.jl).
